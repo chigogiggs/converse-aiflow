@@ -16,6 +16,7 @@ const Signup = () => {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // First sign up the user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -23,24 +24,35 @@ const Signup = () => {
 
       if (authError) throw authError;
 
-      // Set user preferences
       if (authData.user) {
-        const { error: prefError } = await supabase
-          .from('user_preferences')
-          .insert([
-            { user_id: authData.user.id, preferred_language: language }
-          ]);
+        // Wait for the session to be established
+        const { data: sessionData } = await supabase.auth.getSession();
+        
+        if (sessionData?.session) {
+          // Now insert user preferences with the authenticated session
+          const { error: prefError } = await supabase
+            .from('user_preferences')
+            .insert([
+              { 
+                user_id: authData.user.id, 
+                preferred_language: language 
+              }
+            ]);
 
-        if (prefError) throw prefError;
+          if (prefError) {
+            console.error("Preference error:", prefError);
+            throw new Error("Failed to set language preferences");
+          }
+
+          toast({
+            title: "Success",
+            description: "Account created successfully!",
+          });
+          
+          // Redirect to chat with onboarding flag
+          navigate("/chat?onboarding=true");
+        }
       }
-
-      toast({
-        title: "Success",
-        description: "Account created successfully!",
-      });
-      
-      // Redirect to chat with onboarding flag
-      navigate("/chat?onboarding=true");
     } catch (error: any) {
       toast({
         title: "Error",
@@ -54,7 +66,7 @@ const Signup = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-tr from-blue-50 to-indigo-50 px-4">
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-8 animate-fade-in">
-          <Logo className="w-48 h-48" /> {/* Increased size */}
+          <Logo className="w-48 h-48" />
         </div>
         <div className="text-center mb-8 animate-fade-in" style={{ animationDelay: "0.2s" }}>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Join Soyle Translator</h2>

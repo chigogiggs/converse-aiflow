@@ -1,16 +1,15 @@
-import { Globe } from "lucide-react";
-import { Link } from "react-router-dom";
+import React from "react";
 
-export const Logo = () => {
+interface LogoProps {
+  className?: string;
+}
+
+export const Logo: React.FC<LogoProps> = ({ className }) => {
   return (
-    <Link to="/" className="flex items-center gap-2 group">
-      <div className="relative">
-        <Globe className="w-8 h-8 text-indigo-600 animate-pulse group-hover:text-indigo-500 transition-colors" />
-        <div className="absolute -inset-1 bg-indigo-100 rounded-full blur-sm group-hover:blur-md transition-all opacity-75" />
-      </div>
-      <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-blue-500 bg-clip-text text-transparent">
+    <div className={className}>
+      <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent animate-fade-in">
         Soyle Translator
-      </span>
-    </Link>
+      </h1>
+    </div>
   );
 };
