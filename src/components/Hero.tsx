@@ -1,8 +1,41 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { ChatPreview } from "./ChatPreview";
+import { Logo } from "./Logo";
 
 export const Hero = () => {
   const navigate = useNavigate();
+
+  const sampleChats = [
+    {
+      user1: {
+        name: "Sarah Chen",
+        image: "/photo-1649972904349-6e44c42644a7",
+        message: "Bonjour! Comment allez-vous?",
+        language: "French",
+      },
+      user2: {
+        name: "John Smith",
+        image: "/photo-1581091226825-a6a2a5aee158",
+        message: "I'm doing great, thanks! How about you?",
+        language: "English",
+      },
+    },
+    {
+      user1: {
+        name: "Maria Garcia",
+        image: "/photo-1581090464777-f3220bbe1b8b",
+        message: "¡Hola! ¿Qué tal tu día?",
+        language: "Spanish",
+      },
+      user2: {
+        name: "Yuki Tanaka",
+        image: "/photo-1582562124811-c09040d0a901",
+        message: "こんにちは！元気です。",
+        language: "Japanese",
+      },
+    },
+  ];
 
   return (
     <div className="relative isolate px-6 pt-14 lg:px-8">
@@ -17,12 +50,15 @@ export const Hero = () => {
       </div>
       <div className="mx-auto max-w-2xl py-32 sm:py-48 lg:py-56">
         <div className="text-center">
+          <div className="flex justify-center mb-8">
+            <Logo />
+          </div>
           <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl animate-fade-in">
             AI-Powered Chat Translation
           </h1>
           <p className="mt-6 text-lg leading-8 text-gray-600 animate-fade-in">
-            Experience communication without language barriers. Our AI understands your intent and translates better than
-            standard translators.
+            Experience communication without language barriers. Our AI understands
+            your intent and translates better than standard translators.
           </p>
           <div className="mt-10 flex items-center justify-center gap-x-6 animate-fade-in">
             <Button
@@ -39,6 +75,16 @@ export const Hero = () => {
               Learn more <span aria-hidden="true">→</span>
             </Button>
           </div>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-7xl px-6 lg:px-8 pb-24">
+        <div className="mx-auto grid max-w-2xl grid-cols-1 gap-8 lg:max-w-none lg:grid-cols-2">
+          {sampleChats.map((chat, index) => (
+            <div key={index} className="animate-fade-in" style={{ animationDelay: `${index * 0.2}s` }}>
+              <ChatPreview {...chat} />
+            </div>
+          ))}
         </div>
       </div>
     </div>

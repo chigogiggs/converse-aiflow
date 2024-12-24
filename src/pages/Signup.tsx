@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Logo } from "@/components/Logo";
 
 const Signup = () => {
   const [email, setEmail] = useState("");
@@ -40,8 +41,10 @@ const Signup = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-tr from-blue-50 to-indigo-50 px-4">
       <div className="w-full max-w-md">
+        <div className="flex justify-center mb-8">
+          <Logo />
+        </div>
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-indigo-600 mb-2">Soyle Translator</h1>
           <p className="text-gray-600">Create your account to get started</p>
         </div>
         
