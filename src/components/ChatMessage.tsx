@@ -4,9 +4,10 @@ interface ChatMessageProps {
   message: string;
   isOutgoing: boolean;
   timestamp: string;
+  isTranslating?: boolean;
 }
 
-export const ChatMessage = ({ message, isOutgoing, timestamp }: ChatMessageProps) => {
+export const ChatMessage = ({ message, isOutgoing, timestamp, isTranslating }: ChatMessageProps) => {
   return (
     <div
       className={cn(
@@ -24,6 +25,9 @@ export const ChatMessage = ({ message, isOutgoing, timestamp }: ChatMessageProps
           )}
         >
           <p className="text-sm">{message}</p>
+          {isTranslating && (
+            <span className="text-xs opacity-70">Translating...</span>
+          )}
         </div>
         <span className="text-xs text-gray-500 leading-none">{timestamp}</span>
       </div>
