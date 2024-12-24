@@ -17,24 +17,34 @@ const Signup = () => {
     e.preventDefault();
     try {
       // First sign up the user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            preferred_language: language,
+          }
+        }
       });
 
-      if (authError) throw authError;
+      if (signUpError) throw signUpError;
 
-      if (authData.user) {
-        // Wait for the session to be established
-        const { data: sessionData } = await supabase.auth.getSession();
-        
-        if (sessionData?.session) {
+      if (signUpData.user) {
+        // Immediately sign in the user
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (signInError) throw signInError;
+
+        if (signInData.session) {
           // Now insert user preferences with the authenticated session
           const { error: prefError } = await supabase
             .from('user_preferences')
             .insert([
               { 
-                user_id: authData.user.id, 
+                user_id: signInData.user.id, 
                 preferred_language: language 
               }
             ]);
