@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from "@/integrations/supabase/client";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Chat from "./pages/Chat";
@@ -12,10 +12,6 @@ import Signup from "./pages/Signup";
 import { AuthRequired } from "./components/AuthRequired";
 
 const queryClient = new QueryClient();
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
