@@ -3,11 +3,16 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { createClientComponentClient } from "@supabase/auth-helpers-react";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Chat from "./pages/Chat";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import { AuthRequired } from "./components/AuthRequired";
 
 const queryClient = new QueryClient();
+const supabase = createClientComponentClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -18,7 +23,16 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/about" element={<About />} />
-          <Route path="/chat" element={<Chat />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route
+            path="/chat"
+            element={
+              <AuthRequired>
+                <Chat />
+              </AuthRequired>
+            }
+          />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
