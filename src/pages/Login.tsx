@@ -35,41 +35,56 @@ const Login = () => {
   };
 
   return (
-    <div className="container max-w-md mx-auto mt-20 p-6">
-      <h1 className="text-2xl font-bold mb-6">Login</h1>
-      <form onSubmit={handleLogin} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Email</label>
-          <Input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-tr from-blue-50 to-indigo-50 px-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-indigo-600 mb-2">Soyle Translator</h1>
+          <p className="text-gray-600">Welcome back! Please sign in to continue.</p>
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Password</label>
-          <Input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+        
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full"
+                placeholder="Enter your email"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full"
+                placeholder="Enter your password"
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700">
+              Sign In
+            </Button>
+          </form>
+          
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600">
+              Don't have an account?{" "}
+              <button
+                type="button"
+                onClick={() => navigate("/signup")}
+                className="text-indigo-600 hover:text-indigo-700 font-medium"
+              >
+                Sign up
+              </button>
+            </p>
+          </div>
         </div>
-        <Button type="submit" className="w-full">
-          Login
-        </Button>
-        <p className="text-center text-sm">
-          Don't have an account?{" "}
-          <button
-            type="button"
-            onClick={() => navigate("/signup")}
-            className="text-blue-600 hover:underline"
-          >
-            Sign up
-          </button>
-        </p>
-      </form>
+      </div>
     </div>
   );
 };
