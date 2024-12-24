@@ -24,14 +24,14 @@ const Chat = () => {
 
   const translateMessage = async (text: string, targetLanguage: string) => {
     try {
-      const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'llama-3.1-sonar-small-128k-online',
+          model: "gpt-4",
           messages: [
             {
               role: 'system',
@@ -42,7 +42,7 @@ const Chat = () => {
               content: text
             }
           ],
-          temperature: 0.2,
+          temperature: 0.3,
           max_tokens: 1000,
         }),
       });
@@ -63,7 +63,7 @@ const Chat = () => {
     if (!apiKey) {
       toast({
         title: "API Key Required",
-        description: "Please enter your Perplexity API key to enable translations",
+        description: "Please enter your OpenAI API key to enable translations",
         variant: "destructive",
       });
       return;
@@ -79,7 +79,7 @@ const Chat = () => {
     setMessages((prev) => [...prev, newMessage]);
 
     try {
-      // Simulate response and translation
+      // Translate and send response
       const translatedMessage = await translateMessage(message, incomingLanguage);
       const response: Message = {
         id: (Date.now() + 1).toString(),
@@ -114,13 +114,13 @@ const Chat = () => {
 
       <div className="mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Perplexity API Key
+          OpenAI API Key
         </label>
         <input
           type="password"
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
-          placeholder="Enter your API key"
+          placeholder="Enter your OpenAI API key"
           className="w-full p-2 border rounded-md"
         />
       </div>
@@ -146,6 +146,7 @@ const Chat = () => {
               message={message.text}
               isOutgoing={message.isOutgoing}
               timestamp={message.timestamp}
+              isTranslating={message.isTranslating}
             />
           ))}
         </div>
