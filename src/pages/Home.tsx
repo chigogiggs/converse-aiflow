@@ -55,8 +55,11 @@ const Home = () => {
           <CardHeader className="flex flex-row items-center justify-between">
             <div className="flex items-center gap-4">
               <UserAvatar
-                src={currentUser.profile?.avatar_url}
+                src={currentUser.profile?.avatar_url || "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b"}
                 fallback={currentUser.profile?.display_name?.[0] || "?"}
+                size="lg"
+                userId={currentUser.id}
+                editable={true}
               />
               <div>
                 <CardTitle className="text-2xl font-bold">
