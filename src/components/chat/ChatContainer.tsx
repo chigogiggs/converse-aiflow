@@ -6,21 +6,10 @@ import { ChatHeader } from "@/components/ChatHeader";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Settings2, Search, Pin, Smile } from "lucide-react";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { LanguageSelector } from "@/components/LanguageSelector";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Smile } from "lucide-react";
+import { ChatSettings } from "./ChatSettings";
+import { ChatSearch } from "./ChatSearch";
+import { PinnedMessages } from "./PinnedMessages";
 
 interface Message {
   id: string;
@@ -141,77 +130,25 @@ export const ChatContainer = () => {
   );
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-lg shadow-lg overflow-hidden">
+    <div className="flex flex-col h-[calc(100vh-theme(spacing.16))] md:h-[calc(100vh-theme(spacing.32))] bg-white rounded-lg shadow-lg overflow-hidden">
       <ChatHeader
         recipientName="Chat"
         onSettingsClick={() => {}}
       />
       
       <div className="flex items-center gap-2 p-2 border-b">
-        <div className="relative flex-1">
-          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search messages..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-4 py-2 rounded-md border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-        </div>
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="icon">
-              <Settings2 className="h-4 w-4" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent>
-            <SheetHeader>
-              <SheetTitle>Chat Settings</SheetTitle>
-            </SheetHeader>
-            <div className="grid gap-4 py-4">
-              <LanguageSelector
-                value={outgoingLanguage}
-                onChange={setOutgoingLanguage}
-                label="Your message language"
-              />
-              <LanguageSelector
-                value={incomingLanguage}
-                onChange={setIncomingLanguage}
-                label="Translate incoming messages to"
-              />
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  OpenAI API Key
-                </label>
-                <input
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="Enter your OpenAI API key"
-                  className="w-full p-2 border rounded-md"
-                />
-              </div>
-            </div>
-          </SheetContent>
-        </Sheet>
+        <ChatSearch searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+        <ChatSettings
+          outgoingLanguage={outgoingLanguage}
+          incomingLanguage={incomingLanguage}
+          apiKey={apiKey}
+          setOutgoingLanguage={setOutgoingLanguage}
+          setIncomingLanguage={setIncomingLanguage}
+          setApiKey={setApiKey}
+        />
       </div>
 
-      {pinnedMessages.length > 0 && (
-        <div className="p-2 bg-gray-50 border-b">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Pinned Messages</h3>
-          <div className="space-y-2">
-            {messages
-              .filter(msg => pinnedMessages.includes(msg.id))
-              .map(msg => (
-                <div key={msg.id} className="text-sm text-gray-600 flex items-center gap-2">
-                  <Pin className="h-3 w-3" />
-                  <span>{msg.text}</span>
-                </div>
-              ))
-            }
-          </div>
-        </div>
-      )}
+      <PinnedMessages messages={messages} pinnedMessages={pinnedMessages} />
 
       <ScrollArea className="flex-1 p-4" ref={scrollRef}>
         <div className="space-y-4">
@@ -224,25 +161,6 @@ export const ChatContainer = () => {
                 isTranslating={message.isTranslating}
                 originalText={message.originalText}
               />
-              <div className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => togglePinMessage(message.id)}
-                      >
-                        <Pin className="h-3 w-3" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {pinnedMessages.includes(message.id) ? 'Unpin message' : 'Pin message'}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
             </div>
           ))}
           {isTyping && (
