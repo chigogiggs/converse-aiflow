@@ -1,37 +1,42 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import About from "./pages/About";
-import Chat from "./pages/Chat";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import Home from "./pages/Home";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Toaster } from "sonner";
 import { AuthRequired } from "./components/AuthRequired";
+import { Home } from "./pages/Home";
+import { About } from "./pages/About";
+import { Login } from "./pages/Login";
+import { Signup } from "./pages/Signup";
+import { Chat } from "./pages/Chat";
+import { ConnectionsPage } from "./pages/connections";
+import "./App.css";
 
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthRequired>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/home" element={<Home />} />
-            <Route path="/chat" element={<Chat />} />
-          </Routes>
-        </AuthRequired>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <Router>
+      <Toaster position="top-center" richColors />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route
+          path="/chat"
+          element={
+            <AuthRequired>
+              <Chat />
+            </AuthRequired>
+          }
+        />
+        <Route
+          path="/connections"
+          element={
+            <AuthRequired>
+              <ConnectionsPage />
+            </AuthRequired>
+          }
+        />
+      </Routes>
+    </Router>
+  );
+}
 
 export default App;
