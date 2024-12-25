@@ -60,14 +60,7 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
         // Transform the data to handle missing profiles
         const transformedConnections = (connectionsData || []).map(conn => ({
           ...conn,
-          recipient: conn.recipient || {
-            id: conn.recipient_id,
-            username: "unknown",
-            display_name: "Unknown User",
-            avatar_url: null,
-            created_at: null,
-            updated_at: null
-          }
+          recipient: conn.recipient || null
         })) as ConnectionWithProfile[];
 
         setConnections(transformedConnections);
