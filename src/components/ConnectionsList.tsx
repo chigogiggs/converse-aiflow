@@ -8,7 +8,7 @@ import { MessageCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 type ConnectionWithProfile = Connection & {
-  profiles?: Profile;
+  profiles: Profile | null;
 };
 
 export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (userId: string) => void }) => {
@@ -28,7 +28,7 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
           .from('connections')
           .select(`
             *,
-            profiles!connections_recipient_id_fkey (*)
+            profiles:recipient_id (*)
           `)
           .eq('requester_id', user.id)
           .eq('status', 'accepted');
