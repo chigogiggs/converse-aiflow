@@ -23,7 +23,7 @@ export const ConnectionsList = ({ onSelectConnection }: ConnectionsListProps) =>
           .from('connections')
           .select(`
             *,
-            profiles!connections_recipient_id_fkey (
+            profiles:profiles!connections_recipient_id_fkey (
               id,
               username,
               display_name,
