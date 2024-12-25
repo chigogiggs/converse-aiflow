@@ -15,9 +15,10 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // First get connections
       const { data: connectionsData, error: connectionsError } = await supabase
         .from('connections')
-        .select('*, profiles!connections_recipient_id_fkey(*)')
+        .select('*')
         .eq('requester_id', user.id)
         .eq('status', 'accepted');
 
@@ -26,7 +27,23 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
         return;
       }
 
-      setConnections(connectionsData || []);
+      // Then fetch profiles for each connection
+      const connectionsWithProfiles = await Promise.all(
+        (connectionsData || []).map(async (connection) => {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', connection.recipient_id)
+            .single();
+
+          return {
+            ...connection,
+            profiles: profileData
+          };
+        })
+      );
+
+      setConnections(connectionsWithProfiles);
     };
 
     fetchConnections();
