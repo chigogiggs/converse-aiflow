@@ -22,8 +22,18 @@ export const SignupForm = () => {
 
   const handleSignup = async () => {
     try {
-      // First check if username exists
-      const existingUser = await checkExistingUsername(username);
+      // First check if username exists using maybeSingle instead of single
+      const { data: existingUser, error: usernameError } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("username", username)
+        .maybeSingle();
+
+      if (usernameError) {
+        console.error("Error checking username:", usernameError);
+        throw usernameError;
+      }
+
       if (existingUser) {
         toast({
           title: "Username Already Taken",
@@ -33,7 +43,22 @@ export const SignupForm = () => {
         return;
       }
 
-      // Attempt to sign up
+      // Check if email exists first
+      const { data: emailCheck, error: emailCheckError } = await supabase.auth.signInWithPassword({
+        email,
+        password: "dummy-password-for-check", // We use a dummy password since we just want to check if the email exists
+      });
+
+      if (emailCheck?.user) {
+        toast({
+          title: "Account Already Exists",
+          description: "This email is already registered. Please try logging in instead.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // If we get here, the email doesn't exist, so we can proceed with signup
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -45,18 +70,7 @@ export const SignupForm = () => {
         }
       });
 
-      if (signUpError) {
-        // Handle the case where the user already exists
-        if (signUpError.message.includes("User already registered")) {
-          toast({
-            title: "Account Already Exists",
-            description: "This email is already registered. Please try logging in instead.",
-            variant: "destructive",
-          });
-          return;
-        }
-        throw signUpError;
-      }
+      if (signUpError) throw signUpError;
 
       if (signUpData.user) {
         // Create profile and preferences records
@@ -80,6 +94,7 @@ export const SignupForm = () => {
         }
       }
     } catch (error: any) {
+      console.error("Signup error:", error);
       toast({
         title: "Error",
         description: error.message,
@@ -87,32 +102,6 @@ export const SignupForm = () => {
       });
     }
   };
-
-  const slides = [
-    <EmailPasswordSlide
-      key="email-password"
-      email={email}
-      password={password}
-      onEmailChange={setEmail}
-      onPasswordChange={setPassword}
-    />,
-    <UsernameSlide
-      key="username"
-      username={username}
-      onUsernameChange={setUsername}
-    />,
-    <ProfilePictureSlide
-      key="profile-picture"
-      avatarUrl={avatarUrl}
-      username={username}
-      onAvatarChange={setAvatarUrl}
-    />,
-    <LanguageSlide
-      key="language"
-      language={language}
-      onLanguageChange={setLanguage}
-    />
-  ];
 
   const canGoNext = () => {
     switch (currentStep) {
