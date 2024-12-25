@@ -32,7 +32,18 @@ export const SignupForm = () => {
         }
       });
 
-      if (signUpError) throw signUpError;
+      if (signUpError) {
+        // Check for specific error types
+        if (signUpError.message.includes("User already registered")) {
+          toast({
+            title: "Account Already Exists",
+            description: "This email is already registered. Please try logging in instead.",
+            variant: "destructive",
+          });
+          return;
+        }
+        throw signUpError;
+      }
 
       if (signUpData.user) {
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
