@@ -70,7 +70,7 @@ export const SignupForm = () => {
             description: "Your account has been created successfully.",
           });
           
-          navigate("/chat?onboarding=true");
+          navigate("/home");
         }
       }
     } catch (error: any) {
