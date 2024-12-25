@@ -63,7 +63,7 @@ const Home = () => {
               />
               <div>
                 <CardTitle className="text-2xl font-bold">
-                  {currentUser.profile?.display_name}
+                  {currentUser.profile?.display_name !== "New User" ? currentUser.profile?.display_name : ""}
                 </CardTitle>
                 <p className="text-muted-foreground">
                   {currentUser.email}
