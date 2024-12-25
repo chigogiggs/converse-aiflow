@@ -18,7 +18,7 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
         .from('connections')
         .select(`
           *,
-          profiles:profiles!recipient_id(username, display_name, avatar_url)
+          profiles!connections_recipient_id_fkey(username, display_name, avatar_url)
         `)
         .eq('requester_id', user.id)
         .eq('status', 'accepted');
