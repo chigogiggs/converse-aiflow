@@ -6,6 +6,11 @@ export const useCurrentUser = () => {
   return useQuery({
     queryKey: ["currentUser"],
     queryFn: async () => {
+      // First check if we have a valid session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (!session) return null;
+
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError) {
         console.error("User fetch error:", userError);
@@ -16,7 +21,7 @@ export const useCurrentUser = () => {
         return null;
       }
 
-      // Fetch profile with maybeSingle to handle case where profile doesn't exist
+      // Fetch profile with maybeSingle
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("*")
@@ -37,6 +42,7 @@ export const useCurrentUser = () => {
 
       if (preferencesError) {
         console.error("Preferences fetch error:", preferencesError);
+        // Don't throw here, we'll create default preferences if none exist
       }
 
       // If no preferences exist, create default preferences
@@ -48,7 +54,9 @@ export const useCurrentUser = () => {
               user_id: user.id,
               preferred_language: "en" // Default to English
             }
-          ]);
+          ])
+          .select()
+          .maybeSingle();
 
         if (createError) {
           console.error("Error creating preferences:", createError);
@@ -60,7 +68,11 @@ export const useCurrentUser = () => {
         }
       }
 
-      return { ...user, profile, preferences };
+      return { 
+        ...user, 
+        profile, 
+        preferences: preferences || { preferred_language: "en" } 
+      };
     },
     retry: 1,
     meta: {
