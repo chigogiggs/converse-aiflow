@@ -7,11 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UserAvatar } from "@/components/UserAvatar";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { Navigation } from "@/components/Navigation";
 
 const Home = () => {
   const navigate = useNavigate();
   
-  const { data: currentUser, isLoadingUser } = useQuery({
+  const { data: currentUser, isLoading } = useQuery({
     queryKey: ["currentUser"],
     queryFn: async () => {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -29,7 +30,7 @@ const Home = () => {
     },
   });
 
-  if (isLoadingUser) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -47,15 +48,15 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
+      <Navigation />
       <div className="container mx-auto px-4 py-8 space-y-8">
         {/* User Profile Card */}
         <Card className="w-full max-w-2xl mx-auto bg-card/50 backdrop-blur-sm">
           <CardHeader className="flex flex-row items-center justify-between">
             <div className="flex items-center gap-4">
               <UserAvatar
-                src={currentUser.profile?.avatar_url || undefined}
+                src={currentUser.profile?.avatar_url}
                 fallback={currentUser.profile?.display_name?.[0] || "?"}
-                className="h-16 w-16"
               />
               <div>
                 <CardTitle className="text-2xl font-bold">
