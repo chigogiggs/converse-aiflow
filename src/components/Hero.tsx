@@ -2,9 +2,24 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ChatPreview } from "./ChatPreview";
 import { Logo } from "./Logo";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 export const Hero = () => {
   const navigate = useNavigate();
+
+  const handleStartChat = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to start chatting",
+      });
+      navigate("/login");
+      return;
+    }
+    navigate("/chat");
+  };
 
   const sampleChats = [
     {
@@ -62,7 +77,7 @@ export const Hero = () => {
           </p>
           <div className="mt-10 flex items-center justify-center gap-x-6 animate-fade-in">
             <Button
-              onClick={() => navigate("/chat")}
+              onClick={handleStartChat}
               className="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             >
               Start Chatting
