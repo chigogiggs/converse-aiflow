@@ -9,7 +9,7 @@ export const SearchInput = ({ value, onChange }: SearchInputProps) => {
   return (
     <Input
       type="search"
-      placeholder="Search users by name or username..."
+      placeholder="Search by username or display name..."
       value={value}
       onChange={(e) => onChange(e.target.value)}
       className="w-full"
