@@ -24,7 +24,17 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
         // First get connections
         const { data: connectionsData, error: connectionsError } = await supabase
           .from('connections')
-          .select('*')
+          .select(`
+            *,
+            recipient:profiles!connections_recipient_id_fkey (
+              id,
+              username,
+              display_name,
+              avatar_url,
+              created_at,
+              updated_at
+            )
+          `)
           .eq('requester_id', user.id)
           .eq('status', 'accepted');
 
@@ -38,51 +48,20 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
           return;
         }
 
-        if (!connectionsData?.length) {
-          setConnections([]);
-          return;
-        }
-
-        // Get all recipient IDs
-        const recipientIds = connectionsData.map(conn => conn.recipient_id);
-
-        // Fetch all profiles in a single query
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('*')
-          .in('id', recipientIds);
-
-        if (profilesError) {
-          console.error('Error fetching profiles:', profilesError);
-          toast({
-            title: "Error",
-            description: "Failed to load user profiles",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        // Create a map of profiles for easy lookup
-        const profilesMap = (profilesData || []).reduce((acc, profile) => {
-          acc[profile.id] = profile;
-          return acc;
-        }, {} as { [key: string]: Profile });
-
-        // Combine connections with profiles
-        const connectionsWithProfiles = connectionsData.map(connection => ({
-          ...connection,
-          profiles: profilesMap[connection.recipient_id] || {
-            id: connection.recipient_id,
+        // Transform the data to match our expected format
+        const transformedConnections = connectionsData?.map(conn => ({
+          ...conn,
+          profiles: conn.recipient || {
+            id: conn.recipient_id,
             username: "unknown",
             display_name: "Unknown User",
             avatar_url: null,
             created_at: null,
             updated_at: null
           }
-        }));
+        })) || [];
 
-        setConnections(connectionsWithProfiles);
-        setProfiles(profilesMap);
+        setConnections(transformedConnections);
       } catch (error) {
         console.error('Error in fetchConnectionsAndProfiles:', error);
         toast({
