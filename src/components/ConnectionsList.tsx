@@ -8,7 +8,7 @@ import { MessageCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 type ConnectionWithProfile = Connection & {
-  recipientProfile?: Profile;
+  profiles?: Profile;
 };
 
 export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (userId: string) => void }) => {
@@ -24,10 +24,12 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
           return;
         }
 
-        // First, fetch connections
         const { data: connectionsData, error: connectionsError } = await supabase
           .from('connections')
-          .select('*')
+          .select(`
+            *,
+            profiles!connections_recipient_id_fkey (*)
+          `)
           .eq('requester_id', user.id)
           .eq('status', 'accepted');
 
@@ -41,21 +43,7 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
           return;
         }
 
-        // Then, fetch profiles for each connection
-        const connectionsWithProfiles = await Promise.all((connectionsData || []).map(async (connection) => {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', connection.recipient_id)
-            .maybeSingle();
-
-          return {
-            ...connection,
-            recipientProfile: profileData || undefined
-          };
-        }));
-
-        setConnections(connectionsWithProfiles);
+        setConnections(connectionsData || []);
       } catch (error) {
         console.error('Error in fetchConnections:', error);
         toast({
@@ -87,7 +75,7 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
   }, []);
 
   const handleSelectConnection = (connection: ConnectionWithProfile) => {
-    if (!connection.recipientProfile) {
+    if (!connection.profiles) {
       toast({
         title: "Error",
         description: "Could not find recipient profile",
@@ -116,12 +104,12 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
             onClick={() => handleSelectConnection(connection)}
           >
             <UserAvatar
-              src={connection.recipientProfile?.avatar_url}
-              fallback={connection.recipientProfile?.display_name?.[0] || '?'}
+              src={connection.profiles?.avatar_url}
+              fallback={connection.profiles?.display_name?.[0] || '?'}
             />
             <div>
-              <p className="font-medium">{connection.recipientProfile?.display_name || 'Unknown User'}</p>
-              <p className="text-sm text-gray-500">@{connection.recipientProfile?.username || 'unknown'}</p>
+              <p className="font-medium">{connection.profiles?.display_name || 'Unknown User'}</p>
+              <p className="text-sm text-gray-500">@{connection.profiles?.username || 'unknown'}</p>
             </div>
           </div>
         ))}
