@@ -39,13 +39,30 @@ const Home = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
-      const { data } = await supabase
+      const { data: connectionsData } = await supabase
         .from("connections")
-        .select("*, profiles!connections_recipient_id_fkey(*)")
+        .select("*")
         .eq("requester_id", user.id)
         .eq("status", "accepted");
 
-      return data || [];
+      if (!connectionsData) return [];
+
+      const connectionsWithProfiles = await Promise.all(
+        connectionsData.map(async (connection) => {
+          const { data: profileData } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", connection.recipient_id)
+            .single();
+
+          return {
+            ...connection,
+            profiles: profileData || null
+          };
+        })
+      );
+
+      return connectionsWithProfiles;
     },
   });
 
@@ -146,15 +163,15 @@ const Home = () => {
               >
                 <div className="flex items-center gap-4">
                   <UserAvatar
-                    src={connection.profiles?.avatar_url}
-                    fallback={connection.profiles?.display_name[0] || "?"}
+                    src={connection.profiles?.avatar_url || ''}
+                    fallback={connection.profiles?.display_name?.[0] || '?'}
                   />
                   <div>
                     <h3 className="font-medium">
-                      {connection.profiles?.display_name}
+                      {connection.profiles?.display_name || 'Unknown User'}
                     </h3>
                     <p className="text-sm text-gray-500">
-                      @{connection.profiles?.username}
+                      @{connection.profiles?.username || 'unknown'}
                     </p>
                   </div>
                 </div>
