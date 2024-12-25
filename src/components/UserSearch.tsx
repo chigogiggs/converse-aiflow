@@ -15,17 +15,14 @@ export const UserSearch = ({ currentUserId }: { currentUserId: string }) => {
     queryKey: ["searchUsers", searchQuery],
     enabled: searchQuery.length > 0,
     queryFn: async () => {
-      const { data: users, error } = await supabase.auth.admin.listUsers();
-      if (error) throw error;
-
-      const { data: profiles, error: profilesError } = await supabase
+      const { data: profiles, error } = await supabase
         .from("profiles")
         .select("*")
         .or(`username.ilike.%${searchQuery}%,display_name.ilike.%${searchQuery}%`)
         .neq("id", currentUserId)
         .limit(5);
 
-      if (profilesError) throw profilesError;
+      if (error) throw error;
       return (profiles || []) as Profile[];
     },
   });
