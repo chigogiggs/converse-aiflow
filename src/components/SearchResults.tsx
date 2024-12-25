@@ -2,22 +2,36 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { Button } from "@/components/ui/button";
 import { UserPlus } from "lucide-react";
 import { Profile } from "@/integrations/supabase/types/tables";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface SearchResultsProps {
   results: Profile[];
   onConnect: (userId: string) => void;
+  searchQuery: string;
 }
 
-export const SearchResults = ({ results, onConnect }: SearchResultsProps) => {
+export const SearchResults = ({ results, onConnect, searchQuery }: SearchResultsProps) => {
+  const looksLikeEmail = searchQuery.includes('@');
+
   if (results.length === 0) {
     return (
-      <div className="text-center py-8">
-        <p className="text-muted-foreground">
-          No users found matching your search criteria.
-        </p>
-        <p className="text-sm text-muted-foreground mt-2">
-          Try searching by username or display name
-        </p>
+      <div className="space-y-4 py-8">
+        {looksLikeEmail ? (
+          <Alert>
+            <AlertDescription>
+              Email search is not available for privacy reasons. Try searching by username or display name instead.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <div className="text-center">
+            <p className="text-muted-foreground">
+              No users found matching your search criteria.
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Try searching by username or display name
+            </p>
+          </div>
+        )}
       </div>
     );
   }

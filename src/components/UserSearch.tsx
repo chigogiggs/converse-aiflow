@@ -58,7 +58,7 @@ export const UserSearch = ({ currentUserId }: { currentUserId: string }) => {
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
           ) : (
-            searchQuery && <SearchResults results={searchResults} onConnect={handleConnect} />
+            searchQuery && <SearchResults results={searchResults} onConnect={handleConnect} searchQuery={searchQuery} />
           )}
         </div>
       </CardContent>
