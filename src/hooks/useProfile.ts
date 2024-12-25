@@ -4,35 +4,44 @@ import { toast } from "@/hooks/use-toast";
 export const useProfile = () => {
   const createOrUpdateProfile = async (userId: string, avatarUrl: string) => {
     try {
-      // First check if profile exists
+      // First check if profile exists using proper query syntax
       const { data: profile, error: fetchError } = await supabase
         .from('profiles')
-        .select('*')
+        .select()
         .eq('id', userId)
         .maybeSingle();
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error('Error fetching profile:', fetchError);
+        throw new Error('Failed to check existing profile');
+      }
 
       if (!profile) {
-        // Create new profile
+        // Create new profile with required fields
         const { error: insertError } = await supabase
           .from('profiles')
-          .insert([{
+          .insert({
             id: userId,
             avatar_url: avatarUrl,
-            username: userId.slice(0, 8),
-            display_name: 'User'
-          }]);
+            username: userId.slice(0, 8), // Temporary username
+            display_name: 'New User' // Default display name
+          });
 
-        if (insertError) throw insertError;
+        if (insertError) {
+          console.error('Error creating profile:', insertError);
+          throw new Error('Failed to create new profile');
+        }
       } else {
-        // Update existing profile
+        // Update existing profile's avatar
         const { error: updateError } = await supabase
           .from('profiles')
           .update({ avatar_url: avatarUrl })
           .eq('id', userId);
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error('Error updating profile:', updateError);
+          throw new Error('Failed to update profile');
+        }
       }
 
       return true;
