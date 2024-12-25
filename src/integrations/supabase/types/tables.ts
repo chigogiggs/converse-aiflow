@@ -14,6 +14,6 @@ export interface Connection {
   status: string;
   created_at: string | null;
   updated_at: string | null;
-  recipient?: Profile | null;
-  profiles?: Profile | null;
+  recipient?: Profile;
+  profiles?: Profile;
 }

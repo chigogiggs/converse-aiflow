@@ -57,9 +57,9 @@ export const ConnectionsList = ({ onSelectConnection }: ConnectionsListProps) =>
 
       if (sentError) throw sentError;
 
-      setConnections(connectionsData as Connection[] || []);
-      setPendingReceived(receivedData as Connection[] || []);
-      setPendingSent(sentData as Connection[] || []);
+      setConnections(connectionsData as unknown as Connection[] || []);
+      setPendingReceived(receivedData as unknown as Connection[] || []);
+      setPendingSent(sentData as unknown as Connection[] || []);
     } catch (error: any) {
       toast({
         title: "Error fetching connections",
