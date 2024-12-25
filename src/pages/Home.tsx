@@ -1,21 +1,22 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Loader2, Users, MessageSquare, Settings } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { UserSearch } from "@/components/UserSearch";
 import { ConnectionsList } from "@/components/ConnectionsList";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UserAvatar } from "@/components/UserAvatar";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
 import { Navigation } from "@/components/Navigation";
 import { toast } from "@/hooks/use-toast";
-import { useEffect } from "react";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const Home = () => {
   const navigate = useNavigate();
   
-  // Check auth state on mount
+  // Check auth state on mount and set up listener
   useEffect(() => {
+    // Check initial session
     const checkAuth = async () => {
       const { data: { session }, error } = await supabase.auth.getSession();
       if (error || !session) {
@@ -26,86 +27,31 @@ const Home = () => {
     };
     
     checkAuth();
+
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        navigate("/login");
+      }
+    });
+
+    // Cleanup subscription
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
-  const { data: currentUser, isLoading, error } = useQuery({
-    queryKey: ["currentUser"],
-    queryFn: async () => {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError) {
-        console.error("User fetch error:", userError);
-        throw userError;
-      }
-      if (!user) {
-        console.log("No user found");
-        return null;
-      }
+  const { data: currentUser, isLoading, error } = useCurrentUser();
 
-      // Fetch profile with maybeSingle to handle case where profile doesn't exist
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (profileError) {
-        console.error("Profile fetch error:", profileError);
-        throw profileError;
-      }
-
-      // Fetch preferences with maybeSingle
-      const { data: preferences, error: preferencesError } = await supabase
-        .from("user_preferences")
-        .select("preferred_language")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (preferencesError) {
-        console.error("Preferences fetch error:", preferencesError);
-        // Don't throw here, just log the error and continue
-      }
-
-      // If no preferences exist, create default preferences
-      if (!preferences) {
-        const { error: createError } = await supabase
-          .from("user_preferences")
-          .insert([
-            { 
-              user_id: user.id,
-              preferred_language: "en" // Default to English
-            }
-          ]);
-
-        if (createError) {
-          console.error("Error creating preferences:", createError);
-          toast({
-            title: "Error",
-            description: "Failed to create user preferences",
-            variant: "destructive",
-          });
-        }
-      }
-
-      return { ...user, profile, preferences };
-    },
-    retry: 1, // Only retry once to avoid infinite loops
-    onError: (error) => {
-      console.error("Query error:", error);
-      toast({
-        title: "Error loading profile",
-        description: "Please try logging in again",
-        variant: "destructive",
-      });
-      navigate("/login");
-    }
-  });
-
+  // Handle loading and error states
   if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-red-500">Error loading profile. Please try logging in again.</p>
-      </div>
-    );
+    toast({
+      title: "Error loading profile",
+      description: "Please try logging in again",
+      variant: "destructive",
+    });
+    navigate("/login");
+    return null;
   }
 
   if (isLoading) {
