@@ -26,7 +26,7 @@ export const ConnectionsList = ({ onSelectConnection }: ConnectionsListProps) =>
         .from('connections')
         .select(`
           *,
-          recipient:profiles!connections_recipient_id_fkey(*)
+          recipient:profiles!connections_profiles_recipient_fk(*)
         `)
         .eq('requester_id', user.id)
         .eq('status', 'accepted');
@@ -38,7 +38,7 @@ export const ConnectionsList = ({ onSelectConnection }: ConnectionsListProps) =>
         .from('connections')
         .select(`
           *,
-          profiles:profiles!connections_requester_id_fkey(*)
+          profiles:profiles!connections_profiles_requester_fk(*)
         `)
         .eq('recipient_id', user.id)
         .eq('status', 'pending');
@@ -50,16 +50,16 @@ export const ConnectionsList = ({ onSelectConnection }: ConnectionsListProps) =>
         .from('connections')
         .select(`
           *,
-          profiles:profiles!connections_recipient_id_fkey(*)
+          profiles:profiles!connections_profiles_recipient_fk(*)
         `)
         .eq('requester_id', user.id)
         .eq('status', 'pending');
 
       if (sentError) throw sentError;
 
-      setConnections(connectionsData as unknown as Connection[] || []);
-      setPendingReceived(receivedData as unknown as Connection[] || []);
-      setPendingSent(sentData as unknown as Connection[] || []);
+      setConnections(connectionsData as Connection[] || []);
+      setPendingReceived(receivedData as Connection[] || []);
+      setPendingSent(sentData as Connection[] || []);
     } catch (error: any) {
       toast({
         title: "Error fetching connections",
