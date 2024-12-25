@@ -24,12 +24,10 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
           return;
         }
 
+        // First, fetch connections
         const { data: connectionsData, error: connectionsError } = await supabase
           .from('connections')
-          .select(`
-            *,
-            profiles:recipient_id (*)
-          `)
+          .select('*')
           .eq('requester_id', user.id)
           .eq('status', 'accepted');
 
@@ -43,7 +41,23 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
           return;
         }
 
-        setConnections(connectionsData || []);
+        // Then, fetch profiles for each connection
+        const connectionsWithProfiles = await Promise.all(
+          (connectionsData || []).map(async (connection) => {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', connection.recipient_id)
+              .maybeSingle();
+
+            return {
+              ...connection,
+              profiles: profileData
+            };
+          })
+        );
+
+        setConnections(connectionsWithProfiles);
       } catch (error) {
         console.error('Error in fetchConnections:', error);
         toast({
