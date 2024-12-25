@@ -7,8 +7,19 @@ import { Connection } from "@/integrations/supabase/types/tables";
 import { MessageCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
+type ConnectionWithProfile = Connection & {
+  recipient: {
+    id: string;
+    username: string;
+    display_name: string;
+    avatar_url: string | null;
+    created_at: string | null;
+    updated_at: string | null;
+  } | null;
+};
+
 export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (userId: string) => void }) => {
-  const [connections, setConnections] = useState<Connection[]>([]);
+  const [connections, setConnections] = useState<ConnectionWithProfile[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -56,7 +67,7 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
             created_at: null,
             updated_at: null
           }
-        }));
+        })) as ConnectionWithProfile[];
 
         setConnections(transformedConnections);
       } catch (error) {
@@ -89,7 +100,7 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
     };
   }, []);
 
-  const handleSelectConnection = (connection: Connection) => {
+  const handleSelectConnection = (connection: ConnectionWithProfile) => {
     setSelectedId(connection.id);
     onSelectConnection(connection.recipient_id);
   };
