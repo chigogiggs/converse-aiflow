@@ -11,9 +11,14 @@ interface SearchResultsProps {
 export const SearchResults = ({ results, onConnect }: SearchResultsProps) => {
   if (results.length === 0) {
     return (
-      <p className="text-center text-muted-foreground py-4">
-        No users found
-      </p>
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">
+          No users found matching your search criteria.
+        </p>
+        <p className="text-sm text-muted-foreground mt-2">
+          Try searching by username or display name
+        </p>
+      </div>
     );
   }
 
