@@ -5,6 +5,7 @@ import { ScrollArea } from "./ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { Connection } from "@/integrations/supabase/types/tables";
 import { MessageCircle } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (userId: string) => void }) => {
   const [connections, setConnections] = useState<Connection[]>([]);
@@ -12,38 +13,71 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
 
   useEffect(() => {
     const fetchConnections = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          console.error('No authenticated user found');
+          return;
+        }
 
-      // First get connections
-      const { data: connectionsData, error: connectionsError } = await supabase
-        .from('connections')
-        .select('*')
-        .eq('requester_id', user.id)
-        .eq('status', 'accepted');
+        // First get connections
+        const { data: connectionsData, error: connectionsError } = await supabase
+          .from('connections')
+          .select('*')
+          .eq('requester_id', user.id)
+          .eq('status', 'accepted');
 
-      if (connectionsError) {
-        console.error('Error fetching connections:', connectionsError);
-        return;
+        if (connectionsError) {
+          console.error('Error fetching connections:', connectionsError);
+          toast({
+            title: "Error",
+            description: "Failed to load connections",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Then fetch profiles for each connection
+        const connectionsWithProfiles = await Promise.all(
+          (connectionsData || []).map(async (connection) => {
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', connection.recipient_id)
+              .maybeSingle();
+
+            if (profileError) {
+              console.error('Error fetching profile:', profileError);
+              return {
+                ...connection,
+                profiles: {
+                  display_name: 'Unknown User',
+                  username: 'unknown',
+                  avatar_url: null
+                }
+              };
+            }
+
+            return {
+              ...connection,
+              profiles: profileData || {
+                display_name: 'Unknown User',
+                username: 'unknown',
+                avatar_url: null
+              }
+            };
+          })
+        );
+
+        setConnections(connectionsWithProfiles);
+      } catch (error) {
+        console.error('Error in fetchConnections:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load connections",
+          variant: "destructive",
+        });
       }
-
-      // Then fetch profiles for each connection
-      const connectionsWithProfiles = await Promise.all(
-        (connectionsData || []).map(async (connection) => {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', connection.recipient_id)
-            .single();
-
-          return {
-            ...connection,
-            profiles: profileData
-          };
-        })
-      );
-
-      setConnections(connectionsWithProfiles);
     };
 
     fetchConnections();
@@ -92,8 +126,8 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
               fallback={connection.profiles?.display_name?.[0] || '?'}
             />
             <div>
-              <p className="font-medium">{connection.profiles?.display_name}</p>
-              <p className="text-sm text-gray-500">@{connection.profiles?.username}</p>
+              <p className="font-medium">{connection.profiles?.display_name || 'Unknown User'}</p>
+              <p className="text-sm text-gray-500">@{connection.profiles?.username || 'unknown'}</p>
             </div>
           </div>
         ))}
