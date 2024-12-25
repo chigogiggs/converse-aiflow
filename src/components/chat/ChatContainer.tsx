@@ -130,13 +130,13 @@ export const ChatContainer = () => {
   );
 
   return (
-    <div className="flex flex-col h-[calc(100vh-theme(spacing.16))] md:h-[calc(100vh-theme(spacing.32))] bg-white rounded-lg shadow-lg overflow-hidden">
+    <div className="flex flex-col h-[calc(100vh-4rem)] md:h-[calc(100vh-6rem)] bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden">
       <ChatHeader
         recipientName="Chat"
         onSettingsClick={() => {}}
       />
       
-      <div className="flex items-center gap-2 p-2 border-b">
+      <div className="flex items-center gap-2 p-2 border-b dark:border-gray-800">
         <ChatSearch searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
         <ChatSettings
           outgoingLanguage={outgoingLanguage}
@@ -148,9 +148,11 @@ export const ChatContainer = () => {
         />
       </div>
 
-      <PinnedMessages messages={messages} pinnedMessages={pinnedMessages} />
+      {pinnedMessages.length > 0 && (
+        <PinnedMessages messages={messages} pinnedMessages={pinnedMessages} />
+      )}
 
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+      <ScrollArea className="flex-1 p-4">
         <div className="space-y-4">
           {filteredMessages.map((message) => (
             <div key={message.id} className="group relative">
@@ -164,7 +166,7 @@ export const ChatContainer = () => {
             </div>
           ))}
           {isTyping && (
-            <div className="text-sm text-gray-500 italic flex items-center gap-2">
+            <div className="text-sm text-gray-500 dark:text-gray-400 italic flex items-center gap-2">
               <Smile className="h-4 w-4 animate-bounce" />
               Typing in {outgoingLanguage}...
             </div>
@@ -172,7 +174,7 @@ export const ChatContainer = () => {
         </div>
       </ScrollArea>
 
-      <div className="mt-auto border-t">
+      <div className="border-t dark:border-gray-800">
         <div className="flex justify-between items-center p-2">
           <Button
             variant="outline"
