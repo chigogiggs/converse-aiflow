@@ -3,19 +3,12 @@ import { UserAvatar } from "./UserAvatar";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "./ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { Connection } from "@/integrations/supabase/types/tables";
+import { Connection, Profile } from "@/integrations/supabase/types/tables";
 import { MessageCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 type ConnectionWithProfile = Connection & {
-  recipient: {
-    id: string;
-    username: string;
-    display_name: string;
-    avatar_url: string | null;
-    created_at: string | null;
-    updated_at: string | null;
-  } | null;
+  recipientProfile?: Profile;
 };
 
 export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (userId: string) => void }) => {
@@ -31,19 +24,10 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
           return;
         }
 
+        // First, fetch connections
         const { data: connectionsData, error: connectionsError } = await supabase
           .from('connections')
-          .select(`
-            *,
-            recipient:profiles!connections_recipient_id_fkey (
-              id,
-              username,
-              display_name,
-              avatar_url,
-              created_at,
-              updated_at
-            )
-          `)
+          .select('*')
           .eq('requester_id', user.id)
           .eq('status', 'accepted');
 
@@ -57,13 +41,21 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
           return;
         }
 
-        // Transform the data to handle missing profiles
-        const transformedConnections = (connectionsData || []).map(conn => ({
-          ...conn,
-          recipient: conn.recipient || null
-        })) as ConnectionWithProfile[];
+        // Then, fetch profiles for each connection
+        const connectionsWithProfiles = await Promise.all((connectionsData || []).map(async (connection) => {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', connection.recipient_id)
+            .maybeSingle();
 
-        setConnections(transformedConnections);
+          return {
+            ...connection,
+            recipientProfile: profileData || undefined
+          };
+        }));
+
+        setConnections(connectionsWithProfiles);
       } catch (error) {
         console.error('Error in fetchConnections:', error);
         toast({
@@ -95,7 +87,7 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
   }, []);
 
   const handleSelectConnection = (connection: ConnectionWithProfile) => {
-    if (!connection.recipient) {
+    if (!connection.recipientProfile) {
       toast({
         title: "Error",
         description: "Could not find recipient profile",
@@ -124,12 +116,12 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
             onClick={() => handleSelectConnection(connection)}
           >
             <UserAvatar
-              src={connection.recipient?.avatar_url}
-              fallback={connection.recipient?.display_name?.[0] || '?'}
+              src={connection.recipientProfile?.avatar_url}
+              fallback={connection.recipientProfile?.display_name?.[0] || '?'}
             />
             <div>
-              <p className="font-medium">{connection.recipient?.display_name || 'Unknown User'}</p>
-              <p className="text-sm text-gray-500">@{connection.recipient?.username || 'unknown'}</p>
+              <p className="font-medium">{connection.recipientProfile?.display_name || 'Unknown User'}</p>
+              <p className="text-sm text-gray-500">@{connection.recipientProfile?.username || 'unknown'}</p>
             </div>
           </div>
         ))}
