@@ -25,7 +25,7 @@ const Login = () => {
         title: "Success",
         description: "Logged in successfully",
       });
-      navigate("/chat");
+      navigate("/home");
     } catch (error: any) {
       toast({
         title: "Error",
