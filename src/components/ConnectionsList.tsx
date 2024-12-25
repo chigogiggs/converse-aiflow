@@ -71,6 +71,32 @@ export const ConnectionsList = ({ onSelectConnection }: ConnectionsListProps) =>
 
   useEffect(() => {
     fetchConnections();
+
+    // Subscribe to real-time updates for new connection requests
+    const channel = supabase
+      .channel('connections-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'connections',
+          filter: `recipient_id=eq.${supabase.auth.getUser().then(({ data }) => data.user?.id)}`
+        },
+        (payload) => {
+          console.log('New connection request:', payload);
+          toast({
+            title: "New Connection Request",
+            description: "Someone wants to connect with you!",
+          });
+          fetchConnections(); // Refresh the connections list
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [toast]);
 
   const handleAccept = async (connectionId: string) => {
