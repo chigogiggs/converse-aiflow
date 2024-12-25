@@ -102,6 +102,14 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
   }, []);
 
   const handleSelectConnection = (connection: ConnectionWithProfile) => {
+    if (!connection.recipient) {
+      toast({
+        title: "Error",
+        description: "Could not find recipient profile",
+        variant: "destructive",
+      });
+      return;
+    }
     setSelectedId(connection.id);
     onSelectConnection(connection.recipient_id);
   };
