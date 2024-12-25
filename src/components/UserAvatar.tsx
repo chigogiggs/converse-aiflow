@@ -27,12 +27,15 @@ export const UserAvatar = ({ src, fallback, size = "md", userId, editable = fals
     try {
       setIsUploading(true);
 
-      // First check if profile exists
-      const { data: existingProfile } = await supabase
+      // First check if profile exists using proper query syntax
+      const { data: profiles, error: fetchError } = await supabase
         .from('profiles')
-        .select()
-        .eq('id', userId)
-        .maybeSingle();
+        .select('*')
+        .eq('id', userId);
+
+      if (fetchError) throw fetchError;
+
+      const existingProfile = profiles?.[0];
 
       // Convert image to base64
       const reader = new FileReader();
@@ -42,38 +45,40 @@ export const UserAvatar = ({ src, fallback, size = "md", userId, editable = fals
         try {
           if (!existingProfile) {
             // Create profile if it doesn't exist
-            const { data: newProfile, error: insertError } = await supabase
+            const { error: insertError } = await supabase
               .from('profiles')
               .insert([{ 
                 id: userId,
                 avatar_url: base64String,
                 username: userId.slice(0, 8), // Temporary username
                 display_name: 'User' // Temporary display name
-              }])
-              .select()
-              .maybeSingle();
+              }]);
 
             if (insertError) throw insertError;
-            if (!newProfile) throw new Error("Failed to create profile");
           } else {
             // Update existing profile
-            const { data: updatedProfile, error: updateError } = await supabase
+            const { error: updateError } = await supabase
               .from('profiles')
               .update({ avatar_url: base64String })
-              .eq('id', userId)
-              .select()
-              .maybeSingle();
+              .eq('id', userId);
 
             if (updateError) throw updateError;
-            if (!updatedProfile) throw new Error("Failed to update profile");
           }
 
           toast({
             title: "Success",
             description: "Profile picture updated successfully",
           });
+
+          // Refresh the page to show the updated avatar
+          window.location.reload();
         } catch (error: any) {
-          throw error;
+          console.error('Error updating profile:', error);
+          toast({
+            title: "Error",
+            description: error.message || "Failed to update profile",
+            variant: "destructive",
+          });
         }
       };
 
