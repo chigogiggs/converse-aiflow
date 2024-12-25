@@ -7,22 +7,13 @@ import { Connection, Profile } from "@/integrations/supabase/types/tables";
 import { MessageCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
-// Create a fallback profile that matches the Profile interface
-const createFallbackProfile = (userId: string): Profile => ({
-  id: userId,
-  username: "unknown",
-  display_name: "Unknown User",
-  avatar_url: null,
-  created_at: null,
-  updated_at: null
-});
-
 export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (userId: string) => void }) => {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [profiles, setProfiles] = useState<{ [key: string]: Profile }>({});
 
   useEffect(() => {
-    const fetchConnections = async () => {
+    const fetchConnectionsAndProfiles = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
@@ -47,33 +38,53 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
           return;
         }
 
-        // Then fetch profiles for each connection
-        const connectionsWithProfiles = await Promise.all(
-          (connectionsData || []).map(async (connection) => {
-            const { data: profileData, error: profileError } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', connection.recipient_id)
-              .maybeSingle();
+        if (!connectionsData?.length) {
+          setConnections([]);
+          return;
+        }
 
-            if (profileError) {
-              console.error('Error fetching profile:', profileError);
-              return {
-                ...connection,
-                profiles: createFallbackProfile(connection.recipient_id)
-              };
-            }
+        // Get all recipient IDs
+        const recipientIds = connectionsData.map(conn => conn.recipient_id);
 
-            return {
-              ...connection,
-              profiles: profileData || createFallbackProfile(connection.recipient_id)
-            };
-          })
-        );
+        // Fetch all profiles in a single query
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('*')
+          .in('id', recipientIds);
+
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+          toast({
+            title: "Error",
+            description: "Failed to load user profiles",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Create a map of profiles for easy lookup
+        const profilesMap = (profilesData || []).reduce((acc, profile) => {
+          acc[profile.id] = profile;
+          return acc;
+        }, {} as { [key: string]: Profile });
+
+        // Combine connections with profiles
+        const connectionsWithProfiles = connectionsData.map(connection => ({
+          ...connection,
+          profiles: profilesMap[connection.recipient_id] || {
+            id: connection.recipient_id,
+            username: "unknown",
+            display_name: "Unknown User",
+            avatar_url: null,
+            created_at: null,
+            updated_at: null
+          }
+        }));
 
         setConnections(connectionsWithProfiles);
+        setProfiles(profilesMap);
       } catch (error) {
-        console.error('Error in fetchConnections:', error);
+        console.error('Error in fetchConnectionsAndProfiles:', error);
         toast({
           title: "Error",
           description: "Failed to load connections",
@@ -82,7 +93,7 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
       }
     };
 
-    fetchConnections();
+    fetchConnectionsAndProfiles();
 
     const channel = supabase
       .channel('connections_changes')
@@ -93,7 +104,7 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
           schema: 'public',
           table: 'connections'
         },
-        () => fetchConnections()
+        () => fetchConnectionsAndProfiles()
       )
       .subscribe();
 
