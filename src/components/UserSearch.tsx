@@ -16,15 +16,18 @@ export const UserSearch = ({ currentUserId }: { currentUserId: string }) => {
     queryKey: ["searchUsers", searchQuery],
     enabled: searchQuery.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: users, error } = await supabase.auth.admin.listUsers();
+      if (error) throw error;
+
+      const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
         .select("*")
-        .ilike("username", `%${searchQuery}%`)
+        .or(`username.ilike.%${searchQuery}%,display_name.ilike.%${searchQuery}%`)
         .neq("id", currentUserId)
         .limit(5);
 
-      if (error) throw error;
-      return (data || []) as Profile[];
+      if (profilesError) throw profilesError;
+      return (profiles || []) as Profile[];
     },
   });
 
@@ -54,7 +57,7 @@ export const UserSearch = ({ currentUserId }: { currentUserId: string }) => {
         <div className="space-y-4">
           <Input
             type="search"
-            placeholder="Search users by username..."
+            placeholder="Search users by name or username..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full"
