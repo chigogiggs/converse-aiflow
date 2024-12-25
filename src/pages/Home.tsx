@@ -8,27 +8,105 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Navigation } from "@/components/Navigation";
+import { toast } from "@/hooks/use-toast";
+import { useEffect } from "react";
 
 const Home = () => {
   const navigate = useNavigate();
   
-  const { data: currentUser, isLoading } = useQuery({
+  // Check auth state on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error || !session) {
+        console.log("Auth error or no session:", error);
+        navigate("/login");
+        return;
+      }
+    };
+    
+    checkAuth();
+  }, [navigate]);
+
+  const { data: currentUser, isLoading, error } = useQuery({
     queryKey: ["currentUser"],
     queryFn: async () => {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-      if (!user) return null;
+      if (userError) {
+        console.error("User fetch error:", userError);
+        throw userError;
+      }
+      if (!user) {
+        console.log("No user found");
+        return null;
+      }
 
+      // Fetch profile with maybeSingle to handle case where profile doesn't exist
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", user.id)
         .maybeSingle();
 
-      if (profileError) throw profileError;
-      return { ...user, profile };
+      if (profileError) {
+        console.error("Profile fetch error:", profileError);
+        throw profileError;
+      }
+
+      // Fetch preferences with maybeSingle
+      const { data: preferences, error: preferencesError } = await supabase
+        .from("user_preferences")
+        .select("preferred_language")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (preferencesError) {
+        console.error("Preferences fetch error:", preferencesError);
+        // Don't throw here, just log the error and continue
+      }
+
+      // If no preferences exist, create default preferences
+      if (!preferences) {
+        const { error: createError } = await supabase
+          .from("user_preferences")
+          .insert([
+            { 
+              user_id: user.id,
+              preferred_language: "en" // Default to English
+            }
+          ]);
+
+        if (createError) {
+          console.error("Error creating preferences:", createError);
+          toast({
+            title: "Error",
+            description: "Failed to create user preferences",
+            variant: "destructive",
+          });
+        }
+      }
+
+      return { ...user, profile, preferences };
     },
+    retry: 1, // Only retry once to avoid infinite loops
+    onError: (error) => {
+      console.error("Query error:", error);
+      toast({
+        title: "Error loading profile",
+        description: "Please try logging in again",
+        variant: "destructive",
+      });
+      navigate("/login");
+    }
   });
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-red-500">Error loading profile. Please try logging in again.</p>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
