@@ -57,6 +57,7 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
           return;
         }
 
+        // Transform the data to handle missing profiles
         const transformedConnections = (connectionsData || []).map(conn => ({
           ...conn,
           recipient: conn.recipient || {
