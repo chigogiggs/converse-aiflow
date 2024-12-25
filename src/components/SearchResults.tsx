@@ -1,8 +1,9 @@
 import { UserAvatar } from "@/components/UserAvatar";
 import { Button } from "@/components/ui/button";
-import { UserPlus } from "lucide-react";
+import { UserPlus, Check } from "lucide-react";
 import { Profile } from "@/integrations/supabase/types/tables";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useState } from "react";
 
 interface SearchResultsProps {
   results: Profile[];
@@ -11,7 +12,13 @@ interface SearchResultsProps {
 }
 
 export const SearchResults = ({ results, onConnect, searchQuery }: SearchResultsProps) => {
+  const [sentRequests, setSentRequests] = useState<string[]>([]);
   const looksLikeEmail = searchQuery.includes('@');
+
+  const handleConnect = (userId: string) => {
+    onConnect(userId);
+    setSentRequests([...sentRequests, userId]);
+  };
 
   if (results.length === 0) {
     return (
@@ -55,9 +62,22 @@ export const SearchResults = ({ results, onConnect, searchQuery }: SearchResults
               </p>
             </div>
           </div>
-          <Button onClick={() => onConnect(user.id)}>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Connect
+          <Button 
+            onClick={() => handleConnect(user.id)}
+            disabled={sentRequests.includes(user.id)}
+            variant={sentRequests.includes(user.id) ? "secondary" : "default"}
+          >
+            {sentRequests.includes(user.id) ? (
+              <>
+                <Check className="h-4 w-4 mr-2" />
+                Request Sent
+              </>
+            ) : (
+              <>
+                <UserPlus className="h-4 w-4 mr-2" />
+                Connect
+              </>
+            )}
           </Button>
         </div>
       ))}

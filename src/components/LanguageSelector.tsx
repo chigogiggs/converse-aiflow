@@ -27,7 +27,7 @@ export const LanguageSelector = ({ value, onChange, label }: LanguageSelectorPro
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Select language" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="max-h-[200px] overflow-y-auto">
           {languages.map((language) => (
             <SelectItem key={language.code} value={language.code}>
               {language.name}
