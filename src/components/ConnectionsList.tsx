@@ -23,7 +23,7 @@ export const ConnectionsList = ({ onSelectConnection }: ConnectionsListProps) =>
           .from('connections')
           .select(`
             *,
-            recipient:recipient_id (
+            profiles!connections_recipient_id_fkey (
               id,
               username,
               display_name,
@@ -35,7 +35,13 @@ export const ConnectionsList = ({ onSelectConnection }: ConnectionsListProps) =>
 
         if (error) throw error;
 
-        setConnections(connectionsData || []);
+        // Transform the data to match our Connection type
+        const transformedConnections = connectionsData.map(conn => ({
+          ...conn,
+          recipient: conn.profiles
+        }));
+
+        setConnections(transformedConnections);
       } catch (error: any) {
         toast({
           title: "Error fetching connections",
@@ -58,10 +64,9 @@ export const ConnectionsList = ({ onSelectConnection }: ConnectionsListProps) =>
             className="flex items-center space-x-4 w-full p-2 rounded-lg hover:bg-gray-100 transition-colors"
           >
             <UserAvatar
-              user={{
-                avatar_url: connection.recipient?.avatar_url || null,
-                display_name: connection.recipient?.display_name || "Unknown User",
-              }}
+              src={connection.recipient?.avatar_url || undefined}
+              fallback={connection.recipient?.display_name?.[0] || "?"}
+              size="md"
             />
             <div className="flex-1 text-left">
               <p className="font-medium">{connection.recipient?.display_name}</p>

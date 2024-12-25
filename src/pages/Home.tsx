@@ -23,7 +23,7 @@ const Home = () => {
     },
   });
 
-  if (isLoadingUser) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -39,10 +39,15 @@ const Home = () => {
     );
   }
 
+  const handleSelectConnection = (connectionId: string) => {
+    // Handle connection selection
+    console.log("Selected connection:", connectionId);
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
       <UserSearch currentUserId={currentUser.id} />
-      <ConnectionsList userId={currentUser.id} />
+      <ConnectionsList onSelectConnection={handleSelectConnection} />
     </div>
   );
 };
