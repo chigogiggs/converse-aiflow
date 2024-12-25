@@ -9,6 +9,8 @@ import { ChatHeader } from "@/components/ChatHeader";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { Navigation } from "@/components/Navigation";
+import { useChatMessages } from "@/hooks/useChatMessages";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
 
 interface Message {
   id: string;
@@ -21,89 +23,34 @@ interface Message {
 const Chat = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [messages, setMessages] = useState<Message[]>([]);
   const [selectedConnection, setSelectedConnection] = useState<string | null>(null);
-  const [outgoingLanguage, setOutgoingLanguage] = useState("en");
-  const [incomingLanguage, setIncomingLanguage] = useState("en");
   const [apiKey, setApiKey] = useState("");
+  
+  const { messages, sendMessage } = useChatMessages(selectedConnection);
+  const { 
+    outgoingLanguage, 
+    setOutgoingLanguage, 
+    incomingLanguage, 
+    setIncomingLanguage 
+  } = useUserPreferences();
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error || !session) {
+        console.error("Auth error:", error);
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to continue",
+          variant: "destructive",
+        });
         navigate("/login");
         return;
-      }
-
-      // Load user preferences
-      const { data: preferences } = await supabase
-        .from('user_preferences')
-        .select('preferred_language')
-        .eq('user_id', session.user.id)
-        .single();
-
-      if (preferences) {
-        setOutgoingLanguage(preferences.preferred_language);
       }
     };
 
     checkAuth();
-  }, [navigate]);
-
-  useEffect(() => {
-    if (!selectedConnection) return;
-
-    const fetchMessages = async () => {
-      const { data: messages, error } = await supabase
-        .from('messages')
-        .select('*')
-        .or(`sender_id.eq.${selectedConnection},recipient_id.eq.${selectedConnection}`)
-        .order('created_at', { ascending: true });
-
-      if (error) {
-        console.error('Error fetching messages:', error);
-        return;
-      }
-
-      const formattedMessages = messages.map(msg => ({
-        id: msg.id,
-        text: msg.translated_content || msg.content,
-        isOutgoing: msg.sender_id === selectedConnection,
-        timestamp: new Date(msg.created_at).toLocaleTimeString(),
-      }));
-
-      setMessages(formattedMessages);
-    };
-
-    fetchMessages();
-
-    // Subscribe to new messages
-    const channel = supabase
-      .channel('messages_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `sender_id=eq.${selectedConnection}`
-        },
-        (payload) => {
-          const newMessage = payload.new;
-          setMessages(prev => [...prev, {
-            id: newMessage.id,
-            text: newMessage.translated_content || newMessage.content,
-            isOutgoing: false,
-            timestamp: new Date(newMessage.created_at).toLocaleTimeString(),
-          }]);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [selectedConnection]);
+  }, [navigate, toast]);
 
   const handleSendMessage = async (message: string) => {
     if (!selectedConnection) {
@@ -125,30 +72,8 @@ const Chat = () => {
     }
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const newMessage = {
-        sender_id: user.id,
-        recipient_id: selectedConnection,
-        content: message,
-        source_language: outgoingLanguage,
-        target_language: incomingLanguage,
-      };
-
-      const { error } = await supabase
-        .from('messages')
-        .insert([newMessage]);
-
-      if (error) throw error;
-
-      setMessages(prev => [...prev, {
-        id: Date.now().toString(),
-        text: message,
-        isOutgoing: true,
-        timestamp: new Date().toLocaleTimeString(),
-      }]);
-
+      await sendMessage(message, apiKey);
+      
       toast({
         title: "Message sent",
         description: "Your message has been sent and will be translated",
