@@ -1,32 +1,25 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { LanguageSelector } from "@/components/LanguageSelector";
-import { UserAvatar } from "@/components/UserAvatar";
-import { motion } from "framer-motion";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { User, Mail, Lock, Image } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { EmailPasswordSlide } from "./signup/EmailPasswordSlide";
+import { UsernameSlide } from "./signup/UsernameSlide";
+import { ProfilePictureSlide } from "./signup/ProfilePictureSlide";
+import { LanguageSlide } from "./signup/LanguageSlide";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export const SignupForm = () => {
+  const [currentStep, setCurrentStep] = useState(0);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [language, setLanguage] = useState("en");
-  const [gender, setGender] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const navigate = useNavigate();
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSignup = async () => {
     try {
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
@@ -35,7 +28,6 @@ export const SignupForm = () => {
           data: {
             preferred_language: language,
             username,
-            gender,
           }
         }
       });
@@ -90,138 +82,108 @@ export const SignupForm = () => {
     }
   };
 
+  const slides = [
+    <EmailPasswordSlide
+      key="email-password"
+      email={email}
+      password={password}
+      onEmailChange={setEmail}
+      onPasswordChange={setPassword}
+    />,
+    <UsernameSlide
+      key="username"
+      username={username}
+      onUsernameChange={setUsername}
+    />,
+    <ProfilePictureSlide
+      key="profile-picture"
+      avatarUrl={avatarUrl}
+      username={username}
+      onAvatarChange={setAvatarUrl}
+    />,
+    <LanguageSlide
+      key="language"
+      language={language}
+      onLanguageChange={setLanguage}
+    />
+  ];
+
+  const canGoNext = () => {
+    switch (currentStep) {
+      case 0:
+        return email && password;
+      case 1:
+        return username;
+      case 2:
+        return true; // Avatar is optional
+      case 3:
+        return language;
+      default:
+        return false;
+    }
+  };
+
   return (
-    <motion.div 
-      className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8"
-      variants={{
-        hidden: { opacity: 0, x: -20 },
-        visible: { 
-          opacity: 1, 
-          x: 0,
-          transition: { 
-            duration: 0.4,
-            ease: "easeOut"
-          }
-        }
-      }}
-    >
-      <form onSubmit={handleSignup} className="space-y-6">
-        <div className="space-y-4">
-          <div className="relative">
-            <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-            <Input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="pl-10"
-              placeholder="Choose a username"
-              required
-            />
-          </div>
+    <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 w-full max-w-md mx-auto">
+      <div className="relative">
+        <AnimatePresence mode="wait">
+          {slides[currentStep]}
+        </AnimatePresence>
 
-          <div className="relative">
-            <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="pl-10"
-              placeholder="Enter your email"
-              required
-            />
-          </div>
-
-          <div className="relative">
-            <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="pl-10"
-              placeholder="Choose a strong password"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Gender</label>
-            <Select value={gender} onValueChange={setGender}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select your gender" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="male">Male</SelectItem>
-                <SelectItem value="female">Female</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-                <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Profile Picture</label>
-            <div className="flex items-center space-x-4">
-              <UserAvatar
-                src={avatarUrl}
-                fallback={username?.[0]?.toUpperCase() || "?"}
-                size="lg"
-              />
-              <div className="relative">
-                <Input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  id="avatar-upload"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onload = (e) => {
-                        setAvatarUrl(e.target?.result as string);
-                      };
-                      reader.readAsDataURL(file);
-                    }
-                  }}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => document.getElementById("avatar-upload")?.click()}
-                >
-                  <Image className="w-4 h-4 mr-2" />
-                  Upload Photo
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Language</label>
-            <LanguageSelector
-              value={language}
-              onChange={setLanguage}
-              label=""
-            />
-          </div>
-        </div>
-
-        <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 transition-colors">
-          Create Account
-        </Button>
-      </form>
-      
-      <div className="mt-6 text-center">
-        <p className="text-sm text-gray-600">
-          Already have an account?{" "}
-          <button
-            type="button"
-            onClick={() => navigate("/login")}
-            className="text-indigo-600 hover:text-indigo-700 font-medium transition-colors"
+        <div className="mt-8 flex justify-between items-center">
+          <Button
+            variant="ghost"
+            onClick={() => setCurrentStep(current => current - 1)}
+            disabled={currentStep === 0}
           >
-            Sign in
-          </button>
-        </p>
+            <ChevronLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+
+          <div className="flex gap-2">
+            {slides.map((_, index) => (
+              <div
+                key={index}
+                className={`w-2 h-2 rounded-full ${
+                  index === currentStep ? "bg-indigo-600" : "bg-gray-300"
+                }`}
+              />
+            ))}
+          </div>
+
+          {currentStep < slides.length - 1 ? (
+            <Button
+              onClick={() => setCurrentStep(current => current + 1)}
+              disabled={!canGoNext()}
+            >
+              Next
+              <ChevronRight className="w-4 h-4 ml-2" />
+            </Button>
+          ) : (
+            <Button
+              onClick={handleSignup}
+              disabled={!canGoNext()}
+            >
+              Create Account
+            </Button>
+          )}
+        </div>
       </div>
-    </motion.div>
+
+      {currentStep === 0 && (
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-600">
+            Already have an account?{" "}
+            <button
+              type="button"
+              onClick={() => navigate("/login")}
+              className="text-indigo-600 hover:text-indigo-700 font-medium transition-colors"
+            >
+              Sign in
+            </button>
+          </p>
+        </div>
+      )}
+    </div>
   );
 };
