@@ -11,6 +11,7 @@ const languages = [
   { code: "zh", name: "Chinese" },
   { code: "ja", name: "Japanese" },
   { code: "ko", name: "Korean" },
+  { code: "tr", name: "Turkish" },
 ];
 
 interface LanguageSelectorProps {
