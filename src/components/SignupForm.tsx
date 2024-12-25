@@ -9,7 +9,7 @@ import { UsernameSlide } from "./signup/UsernameSlide";
 import { ProfilePictureSlide } from "./signup/ProfilePictureSlide";
 import { LanguageSlide } from "./signup/LanguageSlide";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { checkExistingUsername, createUserRecords } from "@/utils/auth";
+import { createUserRecords } from "@/utils/auth";
 
 export const SignupForm = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -19,6 +19,32 @@ export const SignupForm = () => {
   const [language, setLanguage] = useState("en");
   const [avatarUrl, setAvatarUrl] = useState("");
   const navigate = useNavigate();
+
+  const slides = [
+    <EmailPasswordSlide
+      key="email-password"
+      email={email}
+      password={password}
+      onEmailChange={setEmail}
+      onPasswordChange={setPassword}
+    />,
+    <UsernameSlide
+      key="username"
+      username={username}
+      onUsernameChange={setUsername}
+    />,
+    <ProfilePictureSlide
+      key="profile-picture"
+      avatarUrl={avatarUrl}
+      username={username}
+      onAvatarChange={setAvatarUrl}
+    />,
+    <LanguageSlide
+      key="language"
+      language={language}
+      onLanguageChange={setLanguage}
+    />
+  ];
 
   const handleSignup = async () => {
     try {
@@ -43,22 +69,23 @@ export const SignupForm = () => {
         return;
       }
 
-      // Check if email exists first
-      const { data: emailCheck, error: emailCheckError } = await supabase.auth.signInWithPassword({
+      // Try to sign in first to check if the account exists
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email,
-        password: "dummy-password-for-check", // We use a dummy password since we just want to check if the email exists
+        password,
       });
 
-      if (emailCheck?.user) {
+      if (signInData?.user) {
         toast({
           title: "Account Already Exists",
-          description: "This email is already registered. Please try logging in instead.",
+          description: "This email is already registered. Redirecting to login...",
           variant: "destructive",
         });
+        navigate("/login");
         return;
       }
 
-      // If we get here, the email doesn't exist, so we can proceed with signup
+      // If we get here, the account doesn't exist, so proceed with signup
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -76,22 +103,12 @@ export const SignupForm = () => {
         // Create profile and preferences records
         await createUserRecords(signUpData.user.id, username, avatarUrl, language);
 
-        // Sign in the user
-        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+        toast({
+          title: "Welcome aboard! 🎉",
+          description: "Your account has been created successfully.",
         });
-
-        if (signInError) throw signInError;
-
-        if (signInData.session) {
-          toast({
-            title: "Welcome aboard! 🎉",
-            description: "Your account has been created successfully.",
-          });
-          
-          navigate("/home");
-        }
+        
+        navigate("/home");
       }
     } catch (error: any) {
       console.error("Signup error:", error);
