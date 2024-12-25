@@ -1,10 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { ChatInput } from "@/components/ChatInput";
 import { ChatMessage } from "@/components/ChatMessage";
 import { useToast } from "@/hooks/use-toast";
+import { ConnectionsList } from "@/components/ConnectionsList";
+import { ChatHeader } from "@/components/ChatHeader";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
   id: string;
@@ -18,48 +22,99 @@ const Chat = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
+  const [selectedConnection, setSelectedConnection] = useState<string | null>(null);
   const [outgoingLanguage, setOutgoingLanguage] = useState("en");
   const [incomingLanguage, setIncomingLanguage] = useState("en");
   const [apiKey, setApiKey] = useState("");
 
-  const translateMessage = async (text: string, targetLanguage: string) => {
-    try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: "gpt-4",
-          messages: [
-            {
-              role: 'system',
-              content: `You are a professional translator. Translate the following text to ${targetLanguage}. Only respond with the translation, nothing else.`
-            },
-            {
-              role: 'user',
-              content: text
-            }
-          ],
-          temperature: 0.3,
-          max_tokens: 1000,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Translation failed');
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate("/login");
+        return;
       }
 
-      const data = await response.json();
-      return data.choices[0].message.content;
-    } catch (error) {
-      console.error('Translation error:', error);
-      throw error;
-    }
-  };
+      // Load user preferences
+      const { data: preferences } = await supabase
+        .from('user_preferences')
+        .select('preferred_language')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (preferences) {
+        setOutgoingLanguage(preferences.preferred_language);
+      }
+    };
+
+    checkAuth();
+  }, [navigate]);
+
+  useEffect(() => {
+    if (!selectedConnection) return;
+
+    const fetchMessages = async () => {
+      const { data: messages, error } = await supabase
+        .from('messages')
+        .select('*')
+        .or(`sender_id.eq.${selectedConnection},recipient_id.eq.${selectedConnection}`)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching messages:', error);
+        return;
+      }
+
+      const formattedMessages = messages.map(msg => ({
+        id: msg.id,
+        text: msg.translated_content || msg.content,
+        isOutgoing: msg.sender_id === selectedConnection,
+        timestamp: new Date(msg.created_at).toLocaleTimeString(),
+      }));
+
+      setMessages(formattedMessages);
+    };
+
+    fetchMessages();
+
+    // Subscribe to new messages
+    const channel = supabase
+      .channel('messages_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `sender_id=eq.${selectedConnection}`
+        },
+        (payload) => {
+          const newMessage = payload.new;
+          setMessages(prev => [...prev, {
+            id: newMessage.id,
+            text: newMessage.translated_content || newMessage.content,
+            isOutgoing: false,
+            timestamp: new Date(newMessage.created_at).toLocaleTimeString(),
+          }]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedConnection]);
 
   const handleSendMessage = async (message: string) => {
+    if (!selectedConnection) {
+      toast({
+        title: "No recipient selected",
+        description: "Please select a connection to start chatting",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!apiKey) {
       toast({
         title: "API Key Required",
@@ -69,88 +124,113 @@ const Chat = () => {
       return;
     }
 
-    // Add outgoing message
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      text: message,
-      isOutgoing: true,
-      timestamp: new Date().toLocaleTimeString(),
-    };
-    setMessages((prev) => [...prev, newMessage]);
-
     try {
-      // Translate and send response
-      const translatedMessage = await translateMessage(message, incomingLanguage);
-      const response: Message = {
-        id: (Date.now() + 1).toString(),
-        text: translatedMessage,
-        isOutgoing: false,
-        timestamp: new Date().toLocaleTimeString(),
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const newMessage = {
+        sender_id: user.id,
+        recipient_id: selectedConnection,
+        content: message,
+        source_language: outgoingLanguage,
+        target_language: incomingLanguage,
       };
-      
-      setMessages((prev) => [...prev, response]);
-      
+
+      const { error } = await supabase
+        .from('messages')
+        .insert([newMessage]);
+
+      if (error) throw error;
+
+      setMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        text: message,
+        isOutgoing: true,
+        timestamp: new Date().toLocaleTimeString(),
+      }]);
+
       toast({
-        title: "Message translated",
-        description: `Message successfully translated to ${incomingLanguage.toUpperCase()}`,
+        title: "Message sent",
+        description: "Your message has been sent and will be translated",
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
-        title: "Translation failed",
-        description: "Failed to translate the message. Please try again.",
+        title: "Error",
+        description: error.message,
         variant: "destructive",
       });
     }
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-4xl font-bold">Chat Translator</h1>
-        <Button onClick={() => navigate("/")} variant="outline">
-          Back to Home
-        </Button>
-      </div>
-
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          OpenAI API Key
-        </label>
-        <input
-          type="password"
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-          placeholder="Enter your OpenAI API key"
-          className="w-full p-2 border rounded-md"
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <LanguageSelector
-          value={outgoingLanguage}
-          onChange={setOutgoingLanguage}
-          label="Your message language"
-        />
-        <LanguageSelector
-          value={incomingLanguage}
-          onChange={setIncomingLanguage}
-          label="Translate incoming messages to"
-        />
-      </div>
-
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="h-[500px] overflow-y-auto p-4 space-y-4 bg-gray-50">
-          {messages.map((message) => (
-            <ChatMessage
-              key={message.id}
-              message={message.text}
-              isOutgoing={message.isOutgoing}
-              timestamp={message.timestamp}
-              isTranslating={message.isTranslating}
-            />
-          ))}
+    <div className="container mx-auto px-4 py-8">
+      <div className="grid grid-cols-4 gap-6 h-[calc(100vh-8rem)]">
+        {/* Sidebar */}
+        <div className="col-span-1 bg-white rounded-lg shadow-lg overflow-hidden">
+          <div className="p-4 border-b">
+            <h2 className="text-xl font-semibold">Connections</h2>
+          </div>
+          <ConnectionsList onSelectConnection={setSelectedConnection} />
         </div>
-        <ChatInput onSendMessage={handleSendMessage} />
+
+        {/* Chat Area */}
+        <div className="col-span-3 bg-white rounded-lg shadow-lg overflow-hidden flex flex-col">
+          {selectedConnection ? (
+            <>
+              <ChatHeader
+                recipientName="John Doe"
+                onSettingsClick={() => {}}
+              />
+              <ScrollArea className="flex-1 p-4">
+                <div className="space-y-4">
+                  {messages.map((message) => (
+                    <ChatMessage
+                      key={message.id}
+                      message={message.text}
+                      isOutgoing={message.isOutgoing}
+                      timestamp={message.timestamp}
+                      isTranslating={message.isTranslating}
+                    />
+                  ))}
+                </div>
+              </ScrollArea>
+              <div className="p-4 border-t">
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <LanguageSelector
+                    value={outgoingLanguage}
+                    onChange={setOutgoingLanguage}
+                    label="Your message language"
+                  />
+                  <LanguageSelector
+                    value={incomingLanguage}
+                    onChange={setIncomingLanguage}
+                    label="Translate incoming messages to"
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    OpenAI API Key
+                  </label>
+                  <input
+                    type="password"
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    placeholder="Enter your OpenAI API key"
+                    className="w-full p-2 border rounded-md"
+                  />
+                </div>
+                <ChatInput onSendMessage={handleSendMessage} />
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <h3 className="text-xl font-semibold mb-2">Select a Connection</h3>
+                <p className="text-gray-500">Choose a connection to start chatting</p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
