@@ -3,17 +3,16 @@ import { UserAvatar } from "./UserAvatar";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "./ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { Connection, Profile } from "@/integrations/supabase/types/tables";
+import { Connection } from "@/integrations/supabase/types/tables";
 import { MessageCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (userId: string) => void }) => {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [profiles, setProfiles] = useState<{ [key: string]: Profile }>({});
 
   useEffect(() => {
-    const fetchConnectionsAndProfiles = async () => {
+    const fetchConnections = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
@@ -21,7 +20,6 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
           return;
         }
 
-        // First get connections
         const { data: connectionsData, error: connectionsError } = await supabase
           .from('connections')
           .select(`
@@ -48,10 +46,9 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
           return;
         }
 
-        // Transform the data to match our expected format
-        const transformedConnections = connectionsData?.map(conn => ({
+        const transformedConnections = (connectionsData || []).map(conn => ({
           ...conn,
-          profiles: conn.recipient || {
+          recipient: conn.recipient || {
             id: conn.recipient_id,
             username: "unknown",
             display_name: "Unknown User",
@@ -59,11 +56,11 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
             created_at: null,
             updated_at: null
           }
-        })) || [];
+        }));
 
         setConnections(transformedConnections);
       } catch (error) {
-        console.error('Error in fetchConnectionsAndProfiles:', error);
+        console.error('Error in fetchConnections:', error);
         toast({
           title: "Error",
           description: "Failed to load connections",
@@ -72,7 +69,7 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
       }
     };
 
-    fetchConnectionsAndProfiles();
+    fetchConnections();
 
     const channel = supabase
       .channel('connections_changes')
@@ -83,7 +80,7 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
           schema: 'public',
           table: 'connections'
         },
-        () => fetchConnectionsAndProfiles()
+        () => fetchConnections()
       )
       .subscribe();
 
@@ -114,12 +111,12 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
             onClick={() => handleSelectConnection(connection)}
           >
             <UserAvatar
-              src={connection.profiles?.avatar_url}
-              fallback={connection.profiles?.display_name?.[0] || '?'}
+              src={connection.recipient?.avatar_url}
+              fallback={connection.recipient?.display_name?.[0] || '?'}
             />
             <div>
-              <p className="font-medium">{connection.profiles?.display_name || 'Unknown User'}</p>
-              <p className="text-sm text-gray-500">@{connection.profiles?.username || 'unknown'}</p>
+              <p className="font-medium">{connection.recipient?.display_name || 'Unknown User'}</p>
+              <p className="text-sm text-gray-500">@{connection.recipient?.username || 'unknown'}</p>
             </div>
           </div>
         ))}
