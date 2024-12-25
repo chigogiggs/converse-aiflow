@@ -33,12 +33,18 @@ export const UserAvatar = ({ src, fallback, size = "md", userId, editable = fals
         const base64String = e.target?.result as string;
         
         // Update profile with base64 string
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('profiles')
           .update({ avatar_url: base64String })
-          .eq('id', userId);
+          .eq('id', userId)
+          .select()
+          .maybeSingle();
 
         if (error) throw error;
+        
+        if (!data) {
+          throw new Error("Profile not found");
+        }
 
         toast({
           title: "Success",
@@ -48,9 +54,10 @@ export const UserAvatar = ({ src, fallback, size = "md", userId, editable = fals
 
       reader.readAsDataURL(file);
     } catch (error: any) {
+      console.error('Error uploading avatar:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to update profile picture",
         variant: "destructive",
       });
     } finally {
