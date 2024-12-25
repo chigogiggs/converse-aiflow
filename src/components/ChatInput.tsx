@@ -63,7 +63,7 @@ export const ChatInput = ({
   }, [typingTimeout]);
 
   return (
-    <form onSubmit={handleSubmit} className="flex items-end gap-2">
+    <form onSubmit={handleSubmit} className="flex items-end gap-2 w-full bg-white p-4 rounded-lg shadow-sm">
       <input
         type="file"
         ref={fileInputRef}
@@ -71,31 +71,36 @@ export const ChatInput = ({
         accept="image/*"
         className="hidden"
       />
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="rounded-full"
-        onClick={handleImageClick}
-      >
-        <ImageIcon className="h-5 w-5" />
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="rounded-full"
-        onClick={onVoiceMessage}
-      >
-        <Mic className="h-5 w-5" />
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="rounded-full hover:bg-gray-100"
+          onClick={handleImageClick}
+        >
+          <ImageIcon className="h-5 w-5 text-gray-600" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="rounded-full hover:bg-gray-100"
+          onClick={onVoiceMessage}
+        >
+          <Mic className="h-5 w-5 text-gray-600" />
+        </Button>
+      </div>
       <Textarea
         value={message}
         onChange={handleChange}
         placeholder="Type your message..."
-        className="min-h-[80px] resize-none"
+        className="flex-1 min-h-[50px] max-h-[150px] resize-none focus-visible:ring-1 focus-visible:ring-indigo-500 border-gray-200"
       />
-      <Button type="submit" className="bg-indigo-600 hover:bg-indigo-500">
+      <Button 
+        type="submit" 
+        className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-full px-4 py-2 flex items-center justify-center"
+      >
         <Send className="h-5 w-5" />
       </Button>
     </form>
