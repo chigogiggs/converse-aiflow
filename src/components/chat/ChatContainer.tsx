@@ -6,7 +6,7 @@ import { ChatHeader } from "@/components/ChatHeader";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Settings2, Search, Pin, EmojiHappy } from "lucide-react";
+import { Settings2, Search, Pin, Smile } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -247,7 +247,7 @@ export const ChatContainer = () => {
           ))}
           {isTyping && (
             <div className="text-sm text-gray-500 italic flex items-center gap-2">
-              <EmojiHappy className="h-4 w-4 animate-bounce" />
+              <Smile className="h-4 w-4 animate-bounce" />
               Typing in {outgoingLanguage}...
             </div>
           )}
