@@ -13,8 +13,8 @@ export const useConnections = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Fetch accepted connections where user is requester
-      const { data: requesterConnections, error: requesterError } = await supabase
+      // Fetch accepted connections
+      const { data: connectionsData, error: connectionsError } = await supabase
         .from('connections')
         .select(`
           *,
@@ -23,22 +23,7 @@ export const useConnections = () => {
         .eq('requester_id', user.id)
         .eq('status', 'accepted');
 
-      if (requesterError) throw requesterError;
-
-      // Fetch accepted connections where user is recipient
-      const { data: recipientConnections, error: recipientError } = await supabase
-        .from('connections')
-        .select(`
-          *,
-          profiles:profiles!connections_profiles_requester_fk(*)
-        `)
-        .eq('recipient_id', user.id)
-        .eq('status', 'accepted');
-
-      if (recipientError) throw recipientError;
-
-      // Combine both sets of accepted connections
-      const allConnections = [...(requesterConnections || []), ...(recipientConnections || [])];
+      if (connectionsError) throw connectionsError;
 
       // Fetch pending received requests
       const { data: receivedData, error: receivedError } = await supabase
@@ -64,7 +49,7 @@ export const useConnections = () => {
 
       if (sentError) throw sentError;
 
-      setConnections(allConnections as Connection[] || []);
+      setConnections(connectionsData as Connection[] || []);
       setPendingReceived(receivedData as Connection[] || []);
       setPendingSent(sentData as Connection[] || []);
     } catch (error: any) {

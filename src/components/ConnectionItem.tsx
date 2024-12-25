@@ -1,6 +1,5 @@
 import { Connection } from "@/integrations/supabase/types/tables";
 import { UserAvatar } from "./UserAvatar";
-import { Card } from "./ui/card";
 
 interface ConnectionItemProps {
   connection: Connection;
@@ -13,21 +12,19 @@ export const ConnectionItem = ({ connection, onSelect }: ConnectionItemProps) =>
   if (!profile) return null;
 
   return (
-    <Card
+    <button
       onClick={() => onSelect?.(connection.recipient_id)}
-      className="flex items-center space-x-4 w-full p-4 cursor-pointer transition-all duration-200 
-        hover:shadow-md hover:scale-[1.01] bg-white/80 dark:bg-gray-800/80
-        border border-gray-200 dark:border-gray-700"
+      className="flex items-center space-x-4 w-full p-2 rounded-lg hover:bg-gray-100 transition-colors"
     >
       <UserAvatar
         src={profile.avatar_url || undefined}
         fallback={profile.display_name?.[0] || "?"}
         size="md"
       />
-      <div className="flex-1">
-        <p className="font-medium text-gray-900 dark:text-gray-100">{profile.display_name}</p>
-        <p className="text-sm text-gray-500 dark:text-gray-400">@{profile.username}</p>
+      <div className="flex-1 text-left">
+        <p className="font-medium">{profile.display_name}</p>
+        <p className="text-sm text-gray-500">@{profile.username}</p>
       </div>
-    </Card>
+    </button>
   );
 };
