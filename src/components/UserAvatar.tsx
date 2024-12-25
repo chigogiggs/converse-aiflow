@@ -27,29 +27,54 @@ export const UserAvatar = ({ src, fallback, size = "md", userId, editable = fals
     try {
       setIsUploading(true);
 
+      // First check if profile exists
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select()
+        .eq('id', userId)
+        .maybeSingle();
+
       // Convert image to base64
       const reader = new FileReader();
       reader.onload = async (e) => {
         const base64String = e.target?.result as string;
         
-        // Update profile with base64 string
-        const { data, error } = await supabase
-          .from('profiles')
-          .update({ avatar_url: base64String })
-          .eq('id', userId)
-          .select()
-          .maybeSingle();
+        try {
+          if (!existingProfile) {
+            // Create profile if it doesn't exist
+            const { data: newProfile, error: insertError } = await supabase
+              .from('profiles')
+              .insert([{ 
+                id: userId,
+                avatar_url: base64String,
+                username: userId.slice(0, 8), // Temporary username
+                display_name: 'User' // Temporary display name
+              }])
+              .select()
+              .maybeSingle();
 
-        if (error) throw error;
-        
-        if (!data) {
-          throw new Error("Profile not found");
+            if (insertError) throw insertError;
+            if (!newProfile) throw new Error("Failed to create profile");
+          } else {
+            // Update existing profile
+            const { data: updatedProfile, error: updateError } = await supabase
+              .from('profiles')
+              .update({ avatar_url: base64String })
+              .eq('id', userId)
+              .select()
+              .maybeSingle();
+
+            if (updateError) throw updateError;
+            if (!updatedProfile) throw new Error("Failed to update profile");
+          }
+
+          toast({
+            title: "Success",
+            description: "Profile picture updated successfully",
+          });
+        } catch (error: any) {
+          throw error;
         }
-
-        toast({
-          title: "Success",
-          description: "Profile picture updated successfully",
-        });
       };
 
       reader.readAsDataURL(file);
