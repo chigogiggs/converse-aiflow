@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "./ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { Connection } from "@/integrations/supabase/types/tables";
+import { MessageCircle } from "lucide-react";
 
 export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (userId: string) => void }) => {
   const [connections, setConnections] = useState<Connection[]>([]);
@@ -14,10 +15,9 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // First get connections
       const { data: connectionsData, error: connectionsError } = await supabase
         .from('connections')
-        .select('*')
+        .select('*, profiles!connections_recipient_id_fkey(*)')
         .eq('requester_id', user.id)
         .eq('status', 'accepted');
 
@@ -26,28 +26,11 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
         return;
       }
 
-      // Then fetch profiles for each connection
-      const connectionsWithProfiles = await Promise.all(
-        (connectionsData || []).map(async (connection) => {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', connection.recipient_id)
-            .single();
-
-          return {
-            ...connection,
-            profiles: profileData
-          };
-        })
-      );
-
-      setConnections(connectionsWithProfiles);
+      setConnections(connectionsData || []);
     };
 
     fetchConnections();
 
-    // Subscribe to connection changes
     const channel = supabase
       .channel('connections_changes')
       .on(
@@ -74,6 +57,10 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
   return (
     <ScrollArea className="h-[calc(100vh-12rem)] w-full rounded-md border p-4">
       <div className="space-y-4">
+        <div className="flex items-center gap-2 px-2">
+          <MessageCircle className="h-5 w-5" />
+          <h3 className="font-medium">Active Chats</h3>
+        </div>
         {connections.map((connection) => (
           <div
             key={connection.id}
