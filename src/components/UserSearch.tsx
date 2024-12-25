@@ -1,13 +1,12 @@
 import { useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { UserAvatar } from "@/components/UserAvatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { UserPlus, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Profile } from "@/integrations/supabase/types/tables";
+import { SearchInput } from "./SearchInput";
+import { SearchResults } from "./SearchResults";
 
 export const UserSearch = ({ currentUserId }: { currentUserId: string }) => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -55,52 +54,14 @@ export const UserSearch = ({ currentUserId }: { currentUserId: string }) => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <Input
-            type="search"
-            placeholder="Search users by name or username..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full"
-          />
+          <SearchInput value={searchQuery} onChange={setSearchQuery} />
 
           {isLoadingSearch ? (
             <div className="flex justify-center p-4">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
           ) : (
-            searchQuery && (
-              <div className="space-y-4">
-                {searchResults.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-4">
-                    No users found
-                  </p>
-                ) : (
-                  searchResults.map((user) => (
-                    <div
-                      key={user.id}
-                      className="flex items-center justify-between p-4 bg-card rounded-lg border shadow-sm"
-                    >
-                      <div className="flex items-center gap-4">
-                        <UserAvatar
-                          src={user.avatar_url || undefined}
-                          fallback={user.display_name?.[0] || "?"}
-                        />
-                        <div>
-                          <h3 className="font-medium">{user.display_name}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            @{user.username}
-                          </p>
-                        </div>
-                      </div>
-                      <Button onClick={() => handleConnect(user.id)}>
-                        <UserPlus className="h-4 w-4 mr-2" />
-                        Connect
-                      </Button>
-                    </div>
-                  ))
-                )}
-              </div>
-            )
+            searchQuery && <SearchResults results={searchResults} onConnect={handleConnect} />
           )}
         </div>
       </CardContent>
