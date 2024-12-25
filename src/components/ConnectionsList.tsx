@@ -3,18 +3,12 @@ import { UserAvatar } from "./UserAvatar";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "./ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { Database } from "@/integrations/supabase/types";
 
-interface Profile {
-  username: string;
-  display_name: string;
-  avatar_url: string;
-}
-
-interface Connection {
-  id: string;
+type Profile = Database['public']['Tables']['profiles']['Row'];
+type Connection = Database['public']['Tables']['connections']['Row'] & {
   profiles: Profile;
-  status: string;
-}
+};
 
 export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (userId: string) => void }) => {
   const [connections, setConnections] = useState<Connection[]>([]);
