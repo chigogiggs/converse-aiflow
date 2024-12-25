@@ -14,17 +14,19 @@ type ConnectionWithProfile = Connection & {
 export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (userId: string) => void }) => {
   const [connections, setConnections] = useState<ConnectionWithProfile[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchConnections = async () => {
       try {
+        setIsLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
+        
         if (!user) {
           console.error('No authenticated user found');
           return;
         }
 
-        // First, fetch connections
         const { data: connectionsData, error: connectionsError } = await supabase
           .from('connections')
           .select('*')
@@ -41,23 +43,30 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
           return;
         }
 
-        // Then, fetch profiles for each connection
         const connectionsWithProfiles = await Promise.all(
           (connectionsData || []).map(async (connection) => {
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', connection.recipient_id)
-              .maybeSingle();
+            try {
+              const { data: profileData } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', connection.recipient_id)
+                .maybeSingle();
 
-            return {
-              ...connection,
-              profiles: profileData
-            };
+              return {
+                ...connection,
+                profiles: profileData
+              };
+            } catch (error) {
+              console.error(`Error fetching profile for connection ${connection.id}:`, error);
+              return {
+                ...connection,
+                profiles: null
+              };
+            }
           })
         );
 
-        setConnections(connectionsWithProfiles);
+        setConnections(connectionsWithProfiles.filter(conn => conn !== null));
       } catch (error) {
         console.error('Error in fetchConnections:', error);
         toast({
@@ -65,6 +74,8 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
           description: "Failed to load connections",
           variant: "destructive",
         });
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -101,6 +112,14 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
     onSelectConnection(connection.recipient_id);
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-12rem)]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+      </div>
+    );
+  }
+
   return (
     <ScrollArea className="h-[calc(100vh-12rem)] w-full rounded-md border p-4">
       <div className="space-y-4">
@@ -108,25 +127,29 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
           <MessageCircle className="h-5 w-5" />
           <h3 className="font-medium">Active Chats</h3>
         </div>
-        {connections.map((connection) => (
-          <div
-            key={connection.id}
-            className={cn(
-              "flex items-center space-x-4 rounded-lg p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors",
-              selectedId === connection.id && "bg-gray-100 dark:bg-gray-800"
-            )}
-            onClick={() => handleSelectConnection(connection)}
-          >
-            <UserAvatar
-              src={connection.profiles?.avatar_url}
-              fallback={connection.profiles?.display_name?.[0] || '?'}
-            />
-            <div>
-              <p className="font-medium">{connection.profiles?.display_name || 'Unknown User'}</p>
-              <p className="text-sm text-gray-500">@{connection.profiles?.username || 'unknown'}</p>
+        {connections.length === 0 ? (
+          <p className="text-center text-gray-500 mt-4">No active chats found</p>
+        ) : (
+          connections.map((connection) => (
+            <div
+              key={connection.id}
+              className={cn(
+                "flex items-center space-x-4 rounded-lg p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors",
+                selectedId === connection.id && "bg-gray-100 dark:bg-gray-800"
+              )}
+              onClick={() => handleSelectConnection(connection)}
+            >
+              <UserAvatar
+                src={connection.profiles?.avatar_url}
+                fallback={connection.profiles?.display_name?.[0] || '?'}
+              />
+              <div>
+                <p className="font-medium">{connection.profiles?.display_name || 'Unknown User'}</p>
+                <p className="text-sm text-gray-500">@{connection.profiles?.username || 'unknown'}</p>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </ScrollArea>
   );
