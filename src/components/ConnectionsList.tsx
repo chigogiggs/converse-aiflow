@@ -1,109 +1,75 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { UserAvatar } from "@/components/UserAvatar";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
-import { MessageCircle, Loader2 } from "lucide-react";
-import { Connection, Profile } from "@/integrations/supabase/types/tables";
+import { Connection } from "@/integrations/supabase/types/tables";
+import { UserAvatar } from "./UserAvatar";
+import { ScrollArea } from "./ui/scroll-area";
+import { useToast } from "@/hooks/use-toast";
 
-type ConnectionWithProfile = Connection & {
-  profiles: Profile;
-};
+interface ConnectionsListProps {
+  onSelectConnection: (connectionId: string) => void;
+}
 
-export const ConnectionsList = ({ userId }: { userId: string }) => {
-  const navigate = useNavigate();
+export const ConnectionsList = ({ onSelectConnection }: ConnectionsListProps) => {
+  const [connections, setConnections] = useState<Connection[]>([]);
+  const { toast } = useToast();
 
-  const { data: connections = [], isLoading } = useQuery({
-    queryKey: ["connections", userId],
-    queryFn: async () => {
-      const { data: connectionsData, error: connectionsError } = await supabase
-        .from("connections")
-        .select("*")
-        .eq("requester_id", userId)
-        .eq("status", "accepted");
+  useEffect(() => {
+    const fetchConnections = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
 
-      if (connectionsError) throw connectionsError;
+        const { data: connectionsData, error } = await supabase
+          .from('connections')
+          .select(`
+            *,
+            recipient:recipient_id (
+              id,
+              username,
+              display_name,
+              avatar_url
+            )
+          `)
+          .eq('requester_id', user.id)
+          .eq('status', 'accepted');
 
-      const connectionsWithProfiles = await Promise.all(
-        (connectionsData || []).map(async (connection) => {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", connection.recipient_id)
-            .maybeSingle();
+        if (error) throw error;
 
-          return {
-            ...connection,
-            profiles: profile || {
-              id: connection.recipient_id,
-              username: "unknown",
-              display_name: "Unknown User",
-              avatar_url: null,
-              created_at: null,
-              updated_at: null,
-            },
-          };
-        })
-      );
+        setConnections(connectionsData || []);
+      } catch (error: any) {
+        toast({
+          title: "Error fetching connections",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    };
 
-      return connectionsWithProfiles as ConnectionWithProfile[];
-    },
-  });
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center p-4">
-        <Loader2 className="h-6 w-6 animate-spin" />
-      </div>
-    );
-  }
+    fetchConnections();
+  }, [toast]);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Your Connections</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {connections.length > 0 ? (
-          <div className="space-y-4">
-            {connections.map((connection) => (
-              <div
-                key={connection.id}
-                className="flex items-center justify-between p-4 bg-white rounded-lg shadow"
-              >
-                <div className="flex items-center gap-4">
-                  <UserAvatar
-                    src={connection.profiles?.avatar_url || ""}
-                    fallback={connection.profiles?.display_name?.[0] || "?"}
-                  />
-                  <div>
-                    <h3 className="font-medium">
-                      {connection.profiles?.display_name}
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      @{connection.profiles?.username}
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  variant="secondary"
-                  onClick={() =>
-                    navigate(`/chat?userId=${connection.recipient_id}`)
-                  }
-                >
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  Chat
-                </Button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-center text-gray-500 py-8">
-            You haven't connected with anyone yet. Try searching for users above!
-          </p>
-        )}
-      </CardContent>
-    </Card>
+    <ScrollArea className="h-[calc(100vh-12rem)]">
+      <div className="space-y-4 p-4">
+        {connections.map((connection) => (
+          <button
+            key={connection.id}
+            onClick={() => onSelectConnection(connection.recipient_id)}
+            className="flex items-center space-x-4 w-full p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <UserAvatar
+              user={{
+                avatar_url: connection.recipient?.avatar_url || null,
+                display_name: connection.recipient?.display_name || "Unknown User",
+              }}
+            />
+            <div className="flex-1 text-left">
+              <p className="font-medium">{connection.recipient?.display_name}</p>
+              <p className="text-sm text-gray-500">@{connection.recipient?.username}</p>
+            </div>
+          </button>
+        ))}
+      </div>
+    </ScrollArea>
   );
 };
