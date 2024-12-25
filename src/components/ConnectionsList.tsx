@@ -46,11 +46,17 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
         const connectionsWithProfiles = await Promise.all(
           (connectionsData || []).map(async (connection) => {
             try {
-              const { data: profileData } = await supabase
+              // Use maybeSingle() instead of single() to handle missing profiles
+              const { data: profileData, error: profileError } = await supabase
                 .from('profiles')
-                .select('*')
+                .select()
                 .eq('id', connection.recipient_id)
                 .maybeSingle();
+
+              if (profileError) {
+                console.error(`Error fetching profile for connection ${connection.id}:`, profileError);
+                return null;
+              }
 
               return {
                 ...connection,
@@ -58,15 +64,13 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
               };
             } catch (error) {
               console.error(`Error fetching profile for connection ${connection.id}:`, error);
-              return {
-                ...connection,
-                profiles: null
-              };
+              return null;
             }
           })
         );
 
-        setConnections(connectionsWithProfiles.filter(conn => conn !== null));
+        // Filter out null values and set connections
+        setConnections(connectionsWithProfiles.filter((conn): conn is ConnectionWithProfile => conn !== null));
       } catch (error) {
         console.error('Error in fetchConnections:', error);
         toast({
