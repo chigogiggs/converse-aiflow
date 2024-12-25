@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Connection } from "@/integrations/supabase/types/tables";
-import { UserAvatar } from "./UserAvatar";
 import { ScrollArea } from "./ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "./ui/button";
-import { Check, X } from "lucide-react";
+import { ConnectionItem } from "./ConnectionItem";
+import { PendingConnectionItem } from "./PendingConnectionItem";
 
 interface ConnectionsListProps {
   onSelectConnection: (connectionId: string) => void;
@@ -149,21 +148,11 @@ export const ConnectionsList = ({ onSelectConnection }: ConnectionsListProps) =>
         <ScrollArea className="h-[calc(100vh-16rem)]">
           <div className="space-y-4 p-4">
             {connections.map((connection) => (
-              <button
-                key={connection.id}
-                onClick={() => onSelectConnection(connection.recipient_id)}
-                className="flex items-center space-x-4 w-full p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <UserAvatar
-                  src={connection.recipient?.avatar_url || undefined}
-                  fallback={connection.recipient?.display_name?.[0] || "?"}
-                  size="md"
-                />
-                <div className="flex-1 text-left">
-                  <p className="font-medium">{connection.recipient?.display_name}</p>
-                  <p className="text-sm text-gray-500">@{connection.recipient?.username}</p>
-                </div>
-              </button>
+              <ConnectionItem 
+                key={connection.id} 
+                connection={connection} 
+                onSelect={onSelectConnection}
+              />
             ))}
           </div>
         </ScrollArea>
@@ -173,38 +162,13 @@ export const ConnectionsList = ({ onSelectConnection }: ConnectionsListProps) =>
         <ScrollArea className="h-[calc(100vh-16rem)]">
           <div className="space-y-4 p-4">
             {pendingReceived.map((connection) => (
-              <div
+              <PendingConnectionItem
                 key={connection.id}
-                className="flex items-center justify-between p-4 bg-card rounded-lg border"
-              >
-                <div className="flex items-center gap-4">
-                  <UserAvatar
-                    src={connection.profiles?.avatar_url || undefined}
-                    fallback={connection.profiles?.display_name?.[0] || "?"}
-                    size="md"
-                  />
-                  <div>
-                    <p className="font-medium">{connection.profiles?.display_name}</p>
-                    <p className="text-sm text-gray-500">@{connection.profiles?.username}</p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => handleAccept(connection.id)}
-                    className="bg-green-500 hover:bg-green-600"
-                  >
-                    <Check className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => handleReject(connection.id)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+                connection={connection}
+                onAccept={handleAccept}
+                onReject={handleReject}
+                showActions
+              />
             ))}
             {pendingReceived.length === 0 && (
               <p className="text-center text-muted-foreground py-4">
@@ -219,23 +183,10 @@ export const ConnectionsList = ({ onSelectConnection }: ConnectionsListProps) =>
         <ScrollArea className="h-[calc(100vh-16rem)]">
           <div className="space-y-4 p-4">
             {pendingSent.map((connection) => (
-              <div
+              <PendingConnectionItem
                 key={connection.id}
-                className="flex items-center justify-between p-4 bg-card rounded-lg border"
-              >
-                <div className="flex items-center gap-4">
-                  <UserAvatar
-                    src={connection.profiles?.avatar_url || undefined}
-                    fallback={connection.profiles?.display_name?.[0] || "?"}
-                    size="md"
-                  />
-                  <div>
-                    <p className="font-medium">{connection.profiles?.display_name}</p>
-                    <p className="text-sm text-gray-500">@{connection.profiles?.username}</p>
-                  </div>
-                </div>
-                <span className="text-sm text-muted-foreground">Pending</span>
-              </div>
+                connection={connection}
+              />
             ))}
             {pendingSent.length === 0 && (
               <p className="text-center text-muted-foreground py-4">
