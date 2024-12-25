@@ -24,7 +24,10 @@ export const ConnectionsList = ({ onSelectConnection }: ConnectionsListProps) =>
       // Fetch accepted connections
       const { data: connectionsData, error: connectionsError } = await supabase
         .from('connections')
-        .select('*, recipient:profiles!connections_recipient_id_fkey(*)')
+        .select(`
+          *,
+          recipient:profiles!connections_recipient_id_fkey(*)
+        `)
         .eq('requester_id', user.id)
         .eq('status', 'accepted');
 
@@ -33,7 +36,10 @@ export const ConnectionsList = ({ onSelectConnection }: ConnectionsListProps) =>
       // Fetch pending received requests
       const { data: receivedData, error: receivedError } = await supabase
         .from('connections')
-        .select('*, profiles!connections_requester_id_fkey(*)')
+        .select(`
+          *,
+          profiles:profiles!connections_requester_id_fkey(*)
+        `)
         .eq('recipient_id', user.id)
         .eq('status', 'pending');
 
@@ -42,15 +48,18 @@ export const ConnectionsList = ({ onSelectConnection }: ConnectionsListProps) =>
       // Fetch pending sent requests
       const { data: sentData, error: sentError } = await supabase
         .from('connections')
-        .select('*, profiles!connections_recipient_id_fkey(*)')
+        .select(`
+          *,
+          profiles:profiles!connections_recipient_id_fkey(*)
+        `)
         .eq('requester_id', user.id)
         .eq('status', 'pending');
 
       if (sentError) throw sentError;
 
-      setConnections(connectionsData || []);
-      setPendingReceived(receivedData || []);
-      setPendingSent(sentData || []);
+      setConnections(connectionsData as Connection[] || []);
+      setPendingReceived(receivedData as Connection[] || []);
+      setPendingSent(sentData as Connection[] || []);
     } catch (error: any) {
       toast({
         title: "Error fetching connections",
