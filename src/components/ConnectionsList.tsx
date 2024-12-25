@@ -3,12 +3,7 @@ import { UserAvatar } from "./UserAvatar";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "./ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { Database } from "@/integrations/supabase/types";
-
-type Profile = Database['public']['Tables']['profiles']['Row'];
-type Connection = Database['public']['Tables']['connections']['Row'] & {
-  profiles: Profile;
-};
+import { Connection } from "@/integrations/supabase/types/tables";
 
 export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (userId: string) => void }) => {
   const [connections, setConnections] = useState<Connection[]>([]);
@@ -22,9 +17,8 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
       const { data, error } = await supabase
         .from('connections')
         .select(`
-          id,
-          status,
-          profiles:recipient_id(username, display_name, avatar_url)
+          *,
+          profiles:profiles!recipient_id(username, display_name, avatar_url)
         `)
         .eq('requester_id', user.id)
         .eq('status', 'accepted');
@@ -60,7 +54,7 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
 
   const handleSelectConnection = (connection: Connection) => {
     setSelectedId(connection.id);
-    onSelectConnection(connection.id);
+    onSelectConnection(connection.recipient_id);
   };
 
   return (
@@ -76,12 +70,12 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
             onClick={() => handleSelectConnection(connection)}
           >
             <UserAvatar
-              src={connection.profiles.avatar_url}
-              fallback={connection.profiles.display_name[0]}
+              src={connection.profiles?.avatar_url}
+              fallback={connection.profiles?.display_name?.[0] || '?'}
             />
             <div>
-              <p className="font-medium">{connection.profiles.display_name}</p>
-              <p className="text-sm text-gray-500">@{connection.profiles.username}</p>
+              <p className="font-medium">{connection.profiles?.display_name}</p>
+              <p className="text-sm text-gray-500">@{connection.profiles?.username}</p>
             </div>
           </div>
         ))}
