@@ -9,6 +9,7 @@ import { UsernameSlide } from "./signup/UsernameSlide";
 import { ProfilePictureSlide } from "./signup/ProfilePictureSlide";
 import { LanguageSlide } from "./signup/LanguageSlide";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { checkExistingUsername, createUserRecords } from "@/utils/auth";
 
 export const SignupForm = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -21,13 +22,8 @@ export const SignupForm = () => {
 
   const handleSignup = async () => {
     try {
-      // First check if user exists
-      const { data: existingUser } = await supabase
-        .from('profiles')
-        .select('username')
-        .eq('username', username)
-        .single();
-
+      // First check if username exists
+      const existingUser = await checkExistingUsername(username);
       if (existingUser) {
         toast({
           title: "Username Already Taken",
@@ -37,25 +33,7 @@ export const SignupForm = () => {
         return;
       }
 
-      // Then check if email is already registered
-      const { data: { users }, error: getUserError } = await supabase.auth.admin.listUsers({
-        filters: {
-          email: email
-        }
-      });
-
-      if (getUserError) throw getUserError;
-
-      if (users && users.length > 0) {
-        toast({
-          title: "Account Already Exists",
-          description: "This email is already registered. Please try logging in instead.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // If all checks pass, proceed with signup
+      // Attempt to sign up
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -67,46 +45,24 @@ export const SignupForm = () => {
         }
       });
 
-      if (signUpError) throw signUpError;
+      if (signUpError) {
+        // Handle the case where the user already exists
+        if (signUpError.message.includes("User already registered")) {
+          toast({
+            title: "Account Already Exists",
+            description: "This email is already registered. Please try logging in instead.",
+            variant: "destructive",
+          });
+          return;
+        }
+        throw signUpError;
+      }
 
       if (signUpData.user) {
-        // Create profile record
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: signUpData.user.id,
-            username,
-            display_name: username,
-            avatar_url: avatarUrl
-          });
+        // Create profile and preferences records
+        await createUserRecords(signUpData.user.id, username, avatarUrl, language);
 
-        if (profileError) {
-          // If profile creation fails, we should delete the auth user
-          await supabase.auth.admin.deleteUser(signUpData.user.id);
-          throw profileError;
-        }
-
-        // Create user preferences record
-        const { error: prefError } = await supabase
-          .from('user_preferences')
-          .insert([
-            { 
-              user_id: signUpData.user.id, 
-              preferred_language: language 
-            }
-          ]);
-
-        if (prefError) {
-          // If preferences creation fails, clean up both auth user and profile
-          await supabase.auth.admin.deleteUser(signUpData.user.id);
-          await supabase
-            .from('profiles')
-            .delete()
-            .eq('id', signUpData.user.id);
-          throw prefError;
-        }
-
-        // Now that everything is created, sign in the user
+        // Sign in the user
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
