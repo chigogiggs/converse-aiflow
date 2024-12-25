@@ -1,15 +1,24 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect } from "react";
+import { Mic, Send, Image as ImageIcon } from "lucide-react";
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
   onTyping?: () => void;
+  onVoiceMessage?: () => void;
+  onImageUpload?: (file: File) => void;
 }
 
-export const ChatInput = ({ onSendMessage, onTyping }: ChatInputProps) => {
+export const ChatInput = ({ 
+  onSendMessage, 
+  onTyping,
+  onVoiceMessage,
+  onImageUpload 
+}: ChatInputProps) => {
   const [message, setMessage] = useState("");
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,16 +32,25 @@ export const ChatInput = ({ onSendMessage, onTyping }: ChatInputProps) => {
     setMessage(e.target.value);
     
     if (onTyping) {
-      // Clear existing timeout
       if (typingTimeout) {
         clearTimeout(typingTimeout);
       }
       
-      // Set new timeout
       onTyping();
       setTypingTimeout(setTimeout(() => {
         setTypingTimeout(null);
       }, 1000));
+    }
+  };
+
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onImageUpload) {
+      onImageUpload(file);
     }
   };
 
@@ -46,14 +64,39 @@ export const ChatInput = ({ onSendMessage, onTyping }: ChatInputProps) => {
 
   return (
     <form onSubmit={handleSubmit} className="flex items-end gap-2">
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept="image/*"
+        className="hidden"
+      />
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="rounded-full"
+        onClick={handleImageClick}
+      >
+        <ImageIcon className="h-5 w-5" />
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="rounded-full"
+        onClick={onVoiceMessage}
+      >
+        <Mic className="h-5 w-5" />
+      </Button>
       <Textarea
         value={message}
         onChange={handleChange}
         placeholder="Type your message..."
-        className="min-h-[80px]"
+        className="min-h-[80px] resize-none"
       />
       <Button type="submit" className="bg-indigo-600 hover:bg-indigo-500">
-        Send
+        <Send className="h-5 w-5" />
       </Button>
     </form>
   );
