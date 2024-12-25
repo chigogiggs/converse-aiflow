@@ -11,13 +11,13 @@ export const Footer = () => {
           <Heart className="h-4 w-4 text-red-500" />
           <span>by</span>
           <a
-            href="https://github.com/yourusername"
+            href="https://github.com/chigoanyaso"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 font-medium text-foreground hover:underline"
           >
             <Github className="h-4 w-4" />
-            Your Team
+            Chigo Anyaso
           </a>
         </div>
       </div>
