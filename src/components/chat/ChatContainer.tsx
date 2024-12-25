@@ -254,8 +254,8 @@ export const ChatContainer = () => {
         </div>
       </ScrollArea>
 
-      <div className="p-4 border-t">
-        <div className="flex justify-between items-center mb-4">
+      <div className="mt-auto border-t">
+        <div className="flex justify-between items-center p-2">
           <Button
             variant="outline"
             size="sm"
