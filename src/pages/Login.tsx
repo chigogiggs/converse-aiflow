@@ -40,27 +40,35 @@ const Login = () => {
     try {
       setIsLoading(true);
 
-      // Attempt to sign in
+      // First check if the user exists
+      const { data: userCheck } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', (await supabase.auth.signUp({ email, password })).data.user?.id)
+        .single();
+
+      if (!userCheck) {
+        toast({
+          title: "User not found",
+          description: "No account exists with this email. Please sign up first.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // If user exists, attempt to sign in
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        // Check if the error is due to invalid credentials
-        if (error.message === "Invalid login credentials") {
-          toast({
-            title: "Account not found",
-            description: "No account exists with these credentials. Please check your email or sign up for a new account.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Error",
-            description: error.message,
-            variant: "destructive",
-          });
-        }
+        toast({
+          title: "Login failed",
+          description: "Invalid password. Please try again.",
+          variant: "destructive",
+        });
         return;
       }
 
