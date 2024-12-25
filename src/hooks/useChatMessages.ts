@@ -7,6 +7,7 @@ interface Message {
   isOutgoing: boolean;
   timestamp: string;
   isTranslating?: boolean;
+  originalText?: string;
 }
 
 export const useChatMessages = (selectedConnection: string | null) => {
@@ -33,6 +34,7 @@ export const useChatMessages = (selectedConnection: string | null) => {
       const formattedMessages = messages.map(msg => ({
         id: msg.id,
         text: msg.translated_content || msg.content,
+        originalText: msg.translated_content ? msg.content : undefined,
         isOutgoing: msg.sender_id === selectedConnection,
         timestamp: new Date(msg.created_at).toLocaleTimeString(),
       }));
@@ -58,6 +60,7 @@ export const useChatMessages = (selectedConnection: string | null) => {
           setMessages(prev => [...prev, {
             id: newMessage.id,
             text: newMessage.translated_content || newMessage.content,
+            originalText: newMessage.translated_content ? newMessage.content : undefined,
             isOutgoing: false,
             timestamp: new Date(newMessage.created_at).toLocaleTimeString(),
           }]);
