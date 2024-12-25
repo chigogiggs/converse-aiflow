@@ -5,7 +5,7 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { UserPlus, Loader2 } from "lucide-react";
 import { Profile } from "@/integrations/supabase/types/tables";
 
@@ -38,23 +38,17 @@ export const UserSearch = ({ currentUserId }: { currentUserId: string }) => {
 
       if (error) throw error;
 
-      toast({
-        title: "Success",
-        description: "Connection request sent!",
-      });
+      toast.success("Connection request sent!");
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error("Failed to send connection request");
+      console.error("Error sending connection request:", error);
     }
   };
 
   return (
-    <Card>
+    <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle>Find Connections</CardTitle>
+        <CardTitle className="text-2xl font-bold">Find Connections</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -68,32 +62,40 @@ export const UserSearch = ({ currentUserId }: { currentUserId: string }) => {
 
           {isLoadingSearch ? (
             <div className="flex justify-center p-4">
-              <Loader2 className="h-6 w-6 animate-spin" />
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
           ) : (
             searchQuery && (
               <div className="space-y-4">
-                {searchResults.map((user) => (
-                  <div
-                    key={user.id}
-                    className="flex items-center justify-between p-4 bg-white rounded-lg shadow"
-                  >
-                    <div className="flex items-center gap-4">
-                      <UserAvatar
-                        src={user.avatar_url || ""}
-                        fallback={user.display_name?.[0] || "?"}
-                      />
-                      <div>
-                        <h3 className="font-medium">{user.display_name}</h3>
-                        <p className="text-sm text-gray-500">@{user.username}</p>
+                {searchResults.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-4">
+                    No users found
+                  </p>
+                ) : (
+                  searchResults.map((user) => (
+                    <div
+                      key={user.id}
+                      className="flex items-center justify-between p-4 bg-card rounded-lg border shadow-sm"
+                    >
+                      <div className="flex items-center gap-4">
+                        <UserAvatar
+                          src={user.avatar_url || undefined}
+                          fallback={user.display_name?.[0] || "?"}
+                        />
+                        <div>
+                          <h3 className="font-medium">{user.display_name}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            @{user.username}
+                          </p>
+                        </div>
                       </div>
+                      <Button onClick={() => handleConnect(user.id)}>
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Connect
+                      </Button>
                     </div>
-                    <Button onClick={() => handleConnect(user.id)}>
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      Connect
-                    </Button>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             )
           )}
