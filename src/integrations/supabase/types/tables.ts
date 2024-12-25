@@ -15,5 +15,5 @@ export interface Connection {
   created_at: string | null;
   updated_at: string | null;
   recipient?: Profile | null;
-  profiles?: Profile | null;  // Added this for the foreign key relationship
+  profiles?: Profile | null;
 }

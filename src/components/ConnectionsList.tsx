@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Connection } from "@/integrations/supabase/types/tables";
-import { ScrollArea } from "./ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ConnectionItem } from "./ConnectionItem";
-import { PendingConnectionItem } from "./PendingConnectionItem";
+import { ConnectionsTab } from "./connections/ConnectionsTab";
+import { PendingTab } from "./connections/PendingTab";
 
 interface ConnectionsListProps {
   onSelectConnection: (connectionId: string) => void;
@@ -25,7 +24,7 @@ export const ConnectionsList = ({ onSelectConnection }: ConnectionsListProps) =>
       // Fetch accepted connections
       const { data: connectionsData, error: connectionsError } = await supabase
         .from('connections')
-        .select('*')
+        .select('*, recipient:profiles!connections_recipient_id_fkey(*)')
         .eq('requester_id', user.id)
         .eq('status', 'accepted');
 
@@ -49,33 +48,9 @@ export const ConnectionsList = ({ onSelectConnection }: ConnectionsListProps) =>
 
       if (sentError) throw sentError;
 
-      // Get profiles for accepted connections
-      const connectionsWithProfiles = await Promise.all(
-        connectionsData.map(async (connection) => {
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', connection.recipient_id)
-            .single();
-
-          if (profileError) {
-            console.error('Error fetching profile:', profileError);
-            return {
-              ...connection,
-              recipient: null
-            };
-          }
-
-          return {
-            ...connection,
-            recipient: profileData
-          };
-        })
-      );
-
-      setConnections(connectionsWithProfiles);
-      setPendingReceived(receivedData);
-      setPendingSent(sentData);
+      setConnections(connectionsData || []);
+      setPendingReceived(receivedData || []);
+      setPendingSent(sentData || []);
     } catch (error: any) {
       toast({
         title: "Error fetching connections",
@@ -145,56 +120,25 @@ export const ConnectionsList = ({ onSelectConnection }: ConnectionsListProps) =>
       </TabsList>
 
       <TabsContent value="connections">
-        <ScrollArea className="h-[calc(100vh-16rem)]">
-          <div className="space-y-4 p-4">
-            {connections.map((connection) => (
-              <ConnectionItem 
-                key={connection.id} 
-                connection={connection} 
-                onSelect={onSelectConnection}
-              />
-            ))}
-          </div>
-        </ScrollArea>
+        <ConnectionsTab 
+          connections={connections} 
+          onSelectConnection={onSelectConnection} 
+        />
       </TabsContent>
 
       <TabsContent value="received">
-        <ScrollArea className="h-[calc(100vh-16rem)]">
-          <div className="space-y-4 p-4">
-            {pendingReceived.map((connection) => (
-              <PendingConnectionItem
-                key={connection.id}
-                connection={connection}
-                onAccept={handleAccept}
-                onReject={handleReject}
-                showActions
-              />
-            ))}
-            {pendingReceived.length === 0 && (
-              <p className="text-center text-muted-foreground py-4">
-                No pending requests received
-              </p>
-            )}
-          </div>
-        </ScrollArea>
+        <PendingTab
+          connections={pendingReceived}
+          onAccept={handleAccept}
+          onReject={handleReject}
+          showActions
+        />
       </TabsContent>
 
       <TabsContent value="sent">
-        <ScrollArea className="h-[calc(100vh-16rem)]">
-          <div className="space-y-4 p-4">
-            {pendingSent.map((connection) => (
-              <PendingConnectionItem
-                key={connection.id}
-                connection={connection}
-              />
-            ))}
-            {pendingSent.length === 0 && (
-              <p className="text-center text-muted-foreground py-4">
-                No pending requests sent
-              </p>
-            )}
-          </div>
-        </ScrollArea>
+        <PendingTab
+          connections={pendingSent}
+        />
       </TabsContent>
     </Tabs>
   );
