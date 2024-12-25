@@ -3,9 +3,19 @@ import { UserAvatar } from "./UserAvatar";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "./ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { Connection } from "@/integrations/supabase/types/tables";
+import { Connection, Profile } from "@/integrations/supabase/types/tables";
 import { MessageCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+
+// Create a fallback profile that matches the Profile interface
+const createFallbackProfile = (userId: string): Profile => ({
+  id: userId,
+  username: "unknown",
+  display_name: "Unknown User",
+  avatar_url: null,
+  created_at: null,
+  updated_at: null
+});
 
 export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (userId: string) => void }) => {
   const [connections, setConnections] = useState<Connection[]>([]);
@@ -50,21 +60,13 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
               console.error('Error fetching profile:', profileError);
               return {
                 ...connection,
-                profiles: {
-                  display_name: 'Unknown User',
-                  username: 'unknown',
-                  avatar_url: null
-                }
+                profiles: createFallbackProfile(connection.recipient_id)
               };
             }
 
             return {
               ...connection,
-              profiles: profileData || {
-                display_name: 'Unknown User',
-                username: 'unknown',
-                avatar_url: null
-              }
+              profiles: profileData || createFallbackProfile(connection.recipient_id)
             };
           })
         );
