@@ -1,11 +1,11 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
 import { AuthRequired } from "./components/AuthRequired";
-import { Home } from "./pages/Home";
-import { About } from "./pages/About";
-import { Login } from "./pages/Login";
-import { Signup } from "./pages/Signup";
-import { Chat } from "./pages/Chat";
+import Home from "./pages/Home";
+import About from "./pages/About";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import Chat from "./pages/Chat";
 import { ConnectionsPage } from "./pages/connections";
 import "./App.css";
 
