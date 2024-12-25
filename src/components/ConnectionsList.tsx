@@ -46,31 +46,43 @@ export const ConnectionsList = ({ onSelectConnection }: { onSelectConnection: (u
         const connectionsWithProfiles = await Promise.all(
           (connectionsData || []).map(async (connection) => {
             try {
-              // Use maybeSingle() instead of single() to handle missing profiles
-              const { data: profileData, error: profileError } = await supabase
+              const { data: profileData } = await supabase
                 .from('profiles')
                 .select()
                 .eq('id', connection.recipient_id)
-                .maybeSingle();
+                .single();
 
-              if (profileError) {
-                console.error(`Error fetching profile for connection ${connection.id}:`, profileError);
-                return null;
-              }
-
+              // If no profile is found, return the connection with a default profile
               return {
                 ...connection,
-                profiles: profileData
+                profiles: profileData || {
+                  id: connection.recipient_id,
+                  username: 'unknown',
+                  display_name: 'Unknown User',
+                  avatar_url: null,
+                  created_at: null,
+                  updated_at: null
+                }
               };
             } catch (error) {
               console.error(`Error fetching profile for connection ${connection.id}:`, error);
-              return null;
+              // Return connection with default profile on error
+              return {
+                ...connection,
+                profiles: {
+                  id: connection.recipient_id,
+                  username: 'unknown',
+                  display_name: 'Unknown User',
+                  avatar_url: null,
+                  created_at: null,
+                  updated_at: null
+                }
+              };
             }
           })
         );
 
-        // Filter out null values and set connections
-        setConnections(connectionsWithProfiles.filter((conn): conn is ConnectionWithProfile => conn !== null));
+        setConnections(connectionsWithProfiles);
       } catch (error) {
         console.error('Error in fetchConnections:', error);
         toast({
