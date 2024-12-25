@@ -1,4 +1,4 @@
-import { Github, Heart } from "lucide-react";
+import { Github } from "lucide-react";
 import { Logo } from "./Logo";
 
 export const Footer = () => {
@@ -7,9 +7,7 @@ export const Footer = () => {
       <div className="container mx-auto flex flex-col items-center justify-center gap-4 md:flex-row md:justify-between">
         <Logo className="scale-75" />
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>Built with</span>
-          <Heart className="h-4 w-4 text-red-500" />
-          <span>by</span>
+          <span>Built by</span>
           <a
             href="https://github.com/chigoanyaso"
             target="_blank"
