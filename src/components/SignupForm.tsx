@@ -21,6 +21,41 @@ export const SignupForm = () => {
 
   const handleSignup = async () => {
     try {
+      // First check if user exists
+      const { data: existingUser } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('username', username)
+        .single();
+
+      if (existingUser) {
+        toast({
+          title: "Username Already Taken",
+          description: "Please choose a different username.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Then check if email is already registered
+      const { data: { users }, error: getUserError } = await supabase.auth.admin.listUsers({
+        filters: {
+          email: email
+        }
+      });
+
+      if (getUserError) throw getUserError;
+
+      if (users && users.length > 0) {
+        toast({
+          title: "Account Already Exists",
+          description: "This email is already registered. Please try logging in instead.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // If all checks pass, proceed with signup
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -32,20 +67,46 @@ export const SignupForm = () => {
         }
       });
 
-      if (signUpError) {
-        // Check for specific error types
-        if (signUpError.message.includes("User already registered")) {
-          toast({
-            title: "Account Already Exists",
-            description: "This email is already registered. Please try logging in instead.",
-            variant: "destructive",
-          });
-          return;
-        }
-        throw signUpError;
-      }
+      if (signUpError) throw signUpError;
 
       if (signUpData.user) {
+        // Create profile record
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: signUpData.user.id,
+            username,
+            display_name: username,
+            avatar_url: avatarUrl
+          });
+
+        if (profileError) {
+          // If profile creation fails, we should delete the auth user
+          await supabase.auth.admin.deleteUser(signUpData.user.id);
+          throw profileError;
+        }
+
+        // Create user preferences record
+        const { error: prefError } = await supabase
+          .from('user_preferences')
+          .insert([
+            { 
+              user_id: signUpData.user.id, 
+              preferred_language: language 
+            }
+          ]);
+
+        if (prefError) {
+          // If preferences creation fails, clean up both auth user and profile
+          await supabase.auth.admin.deleteUser(signUpData.user.id);
+          await supabase
+            .from('profiles')
+            .delete()
+            .eq('id', signUpData.user.id);
+          throw prefError;
+        }
+
+        // Now that everything is created, sign in the user
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -54,28 +115,6 @@ export const SignupForm = () => {
         if (signInError) throw signInError;
 
         if (signInData.session) {
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: signInData.user.id,
-              username,
-              display_name: username,
-              avatar_url: avatarUrl
-            });
-
-          if (profileError) throw profileError;
-
-          const { error: prefError } = await supabase
-            .from('user_preferences')
-            .insert([
-              { 
-                user_id: signInData.user.id, 
-                preferred_language: language 
-              }
-            ]);
-
-          if (prefError) throw prefError;
-
           toast({
             title: "Welcome aboard! 🎉",
             description: "Your account has been created successfully.",
