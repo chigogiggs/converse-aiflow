@@ -9,29 +9,75 @@ import { Logo } from "@/components/Logo";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+
+  const validateForm = () => {
+    if (!email || !email.includes('@')) {
+      toast({
+        title: "Invalid email",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
+      return false;
+    }
+    if (!password || password.length < 6) {
+      toast({
+        title: "Invalid password",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive",
+      });
+      return false;
+    }
+    return true;
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) return;
+
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      setIsLoading(true);
+
+      // First check if the user exists
+      const { data: userExists, error: userCheckError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (userCheckError) {
+        if (userCheckError.message === "Invalid login credentials") {
+          toast({
+            title: "Login failed",
+            description: "Invalid email or password. Please try again.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: userCheckError.message,
+            variant: "destructive",
+          });
+        }
+        return;
+      }
 
-      toast({
-        title: "Success",
-        description: "Logged in successfully",
-      });
-      navigate("/home");
+      if (userExists.user) {
+        toast({
+          title: "Success",
+          description: "Logged in successfully",
+        });
+        navigate("/home");
+      }
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message,
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -45,7 +91,7 @@ const Login = () => {
           <p className="text-gray-600">Welcome back! Please sign in to continue.</p>
         </div>
         
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8">
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -56,6 +102,7 @@ const Login = () => {
                 className="w-full"
                 placeholder="Enter your email"
                 required
+                disabled={isLoading}
               />
             </div>
             <div>
@@ -67,10 +114,15 @@ const Login = () => {
                 className="w-full"
                 placeholder="Enter your password"
                 required
+                disabled={isLoading}
               />
             </div>
-            <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700">
-              Sign In
+            <Button 
+              type="submit" 
+              className="w-full"
+              disabled={isLoading}
+            >
+              {isLoading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
           
@@ -81,6 +133,7 @@ const Login = () => {
                 type="button"
                 onClick={() => navigate("/signup")}
                 className="text-indigo-600 hover:text-indigo-700 font-medium"
+                disabled={isLoading}
               >
                 Sign up
               </button>
