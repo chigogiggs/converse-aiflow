@@ -63,7 +63,7 @@ const Home = () => {
                   {currentUser.profile?.display_name}
                 </CardTitle>
                 <p className="text-muted-foreground">
-                  @{currentUser.profile?.username}
+                  {currentUser.email}
                 </p>
               </div>
             </div>
