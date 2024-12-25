@@ -19,29 +19,40 @@ export const ConnectionsList = ({ onSelectConnection }: ConnectionsListProps) =>
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { data: connectionsData, error } = await supabase
+        // First, get the connections
+        const { data: connectionsData, error: connectionsError } = await supabase
           .from('connections')
-          .select(`
-            *,
-            profiles:profiles!connections_recipient_id_fkey (
-              id,
-              username,
-              display_name,
-              avatar_url
-            )
-          `)
+          .select('*')
           .eq('requester_id', user.id)
           .eq('status', 'accepted');
 
-        if (error) throw error;
+        if (connectionsError) throw connectionsError;
 
-        // Transform the data to match our Connection type
-        const transformedConnections = connectionsData.map(conn => ({
-          ...conn,
-          recipient: conn.profiles
-        }));
+        // Then, for each connection, get the recipient's profile
+        const connectionsWithProfiles = await Promise.all(
+          connectionsData.map(async (connection) => {
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', connection.recipient_id)
+              .single();
 
-        setConnections(transformedConnections);
+            if (profileError) {
+              console.error('Error fetching profile:', profileError);
+              return {
+                ...connection,
+                recipient: null
+              };
+            }
+
+            return {
+              ...connection,
+              recipient: profileData
+            };
+          })
+        );
+
+        setConnections(connectionsWithProfiles);
       } catch (error: any) {
         toast({
           title: "Error fetching connections",
