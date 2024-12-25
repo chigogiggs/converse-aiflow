@@ -4,13 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "./ui/scroll-area";
 import { cn } from "@/lib/utils";
 
+interface Profile {
+  username: string;
+  display_name: string;
+  avatar_url: string;
+}
+
 interface Connection {
   id: string;
-  profiles: {
-    username: string;
-    display_name: string;
-    avatar_url: string;
-  };
+  profiles: Profile;
   status: string;
 }
 
