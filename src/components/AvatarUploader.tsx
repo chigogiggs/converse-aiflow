@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useProfile } from "@/hooks/useProfile";
 import { toast } from "@/hooks/use-toast";
 
 interface AvatarUploaderProps {
@@ -8,6 +9,7 @@ interface AvatarUploaderProps {
 
 export const AvatarUploader = ({ userId, onSuccess }: AvatarUploaderProps) => {
   const [isUploading, setIsUploading] = useState(false);
+  const { createOrUpdateProfile } = useProfile();
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -15,12 +17,30 @@ export const AvatarUploader = ({ userId, onSuccess }: AvatarUploaderProps) => {
 
     try {
       setIsUploading(true);
-      console.log("Would upload avatar for user:", userId);
-      toast({
-        title: "Feature disabled",
-        description: "Avatar upload is currently disabled",
-        variant: "destructive",
-      });
+
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64String = e.target?.result as string;
+        
+        try {
+          await createOrUpdateProfile(userId, base64String);
+          
+          toast({
+            title: "Success",
+            description: "Profile picture updated successfully",
+          });
+
+          onSuccess?.();
+        } catch (error: any) {
+          toast({
+            title: "Error",
+            description: error.message || "Failed to update profile picture",
+            variant: "destructive",
+          });
+        }
+      };
+
+      reader.readAsDataURL(file);
     } catch (error: any) {
       console.error('Error uploading avatar:', error);
       toast({

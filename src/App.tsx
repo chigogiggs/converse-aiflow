@@ -6,8 +6,11 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Chat from "./pages/Chat";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import Home from "./pages/Home";
 import Connections from "./pages/Connections";
+import { AuthRequired } from "./components/AuthRequired";
 
 const queryClient = new QueryClient();
 
@@ -17,13 +20,17 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/home" element={<Home />} />
-          <Route path="/chat" element={<Chat />} />
-          <Route path="/connections" element={<Connections />} />
-        </Routes>
+        <AuthRequired>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/home" element={<Home />} />
+            <Route path="/chat" element={<Chat />} />
+            <Route path="/connections" element={<Connections />} />
+          </Routes>
+        </AuthRequired>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
