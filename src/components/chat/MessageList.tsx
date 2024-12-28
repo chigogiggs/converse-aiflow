@@ -10,6 +10,7 @@ import { Languages } from "lucide-react";
 interface MessageListProps {
   messages: Message[];
   searchQuery: string;
+  setSearchQuery: (query: string) => void;
   isTyping: boolean;
   outgoingLanguage: string;
   onTranslateAll?: () => void;
@@ -18,6 +19,7 @@ interface MessageListProps {
 export const MessageList = ({
   messages,
   searchQuery,
+  setSearchQuery,
   isTyping,
   outgoingLanguage,
   onTranslateAll
