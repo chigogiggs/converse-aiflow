@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { MessageContextMenu } from "./chat/MessageContextMenu";
 import { MessageAvatar } from "./chat/message/MessageAvatar";
-import { MessageContent } from "./chat/message/MessageContent";
+import { SingleMessageContent } from "./chat/message/SingleMessageContent";
 import { ReplyPreview } from "./chat/message/ReplyPreview";
 import { Message } from "@/types/message.types";
 
@@ -115,7 +115,7 @@ export const ChatMessage = ({
               isOutgoing={isOutgoing}
             />
           )}
-          <MessageContent
+          <SingleMessageContent
             message={message}
             originalText={originalText}
             isOutgoing={isOutgoing}

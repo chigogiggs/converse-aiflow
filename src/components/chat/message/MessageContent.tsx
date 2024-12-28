@@ -13,13 +13,15 @@ interface MessageContentProps {
 }
 
 export const MessageContent = ({
-  messages,
+  messages = [], // Add default empty array
   searchQuery,
   isTyping,
   outgoingLanguage,
   repliedMessages,
   onReply
 }: MessageContentProps) => {
+  if (!messages) return null; // Add safety check
+
   return (
     <motion.div 
       className="space-y-4 pb-4"
