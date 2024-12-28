@@ -1,21 +1,13 @@
-import { useConnections } from "@/hooks/useConnections";
+import { Connection } from "@/integrations/supabase/types/tables";
 import { ConnectionItem } from "../ConnectionItem";
 import { Skeleton } from "../ui/skeleton";
-import { Profile } from "@/integrations/supabase/types/tables";
 
-export const ConnectionsTab = () => {
-  const { data: connections, isLoading } = useConnections();
+interface ConnectionsTabProps {
+  connections: Connection[];
+  onSelectConnection?: (connectionId: string) => void;
+}
 
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        {[...Array(3)].map((_, i) => (
-          <Skeleton key={i} className="h-16 w-full" />
-        ))}
-      </div>
-    );
-  }
-
+export const ConnectionsTab = ({ connections, onSelectConnection }: ConnectionsTabProps) => {
   if (!connections?.length) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -28,12 +20,18 @@ export const ConnectionsTab = () => {
     <div className="space-y-4">
       {connections.map((connection) => {
         const connectionProfile = connection.recipient || connection.profiles;
+        if (!connectionProfile) return null;
+        
         return (
           <ConnectionItem
             key={connection.id}
-            id={connectionProfile?.id || ''}
-            display_name={connectionProfile?.display_name || ''}
-            avatar_url={connectionProfile?.avatar_url}
+            connection={{
+              id: connectionProfile.id,
+              display_name: connectionProfile.display_name,
+              avatar_url: connectionProfile.avatar_url,
+              username: connectionProfile.username
+            }}
+            onSelect={onSelectConnection}
           />
         );
       })}

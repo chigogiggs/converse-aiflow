@@ -2,7 +2,7 @@ import { useConnections } from "@/hooks/useConnections";
 import { ConnectionItem } from "../ConnectionItem";
 
 export const FullConnectionsList = () => {
-  const { data: connections } = useConnections();
+  const { connections } = useConnections();
 
   if (!connections?.length) {
     return (
@@ -16,12 +16,17 @@ export const FullConnectionsList = () => {
     <div className="space-y-4">
       {connections.map((connection) => {
         const connectionProfile = connection.recipient || connection.profiles;
+        if (!connectionProfile) return null;
+
         return (
           <ConnectionItem
             key={connection.id}
-            id={connectionProfile?.id || ''}
-            display_name={connectionProfile?.display_name || ''}
-            avatar_url={connectionProfile?.avatar_url}
+            connection={{
+              id: connectionProfile.id,
+              display_name: connectionProfile.display_name,
+              avatar_url: connectionProfile.avatar_url,
+              username: connectionProfile.username
+            }}
           />
         );
       })}

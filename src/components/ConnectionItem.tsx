@@ -8,6 +8,7 @@ interface ConnectionItemProps {
     id: string;
     display_name: string;
     avatar_url?: string;
+    username?: string;
   };
   onSelect?: (id: string) => void;
   showActions?: boolean;

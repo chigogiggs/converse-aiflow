@@ -57,8 +57,8 @@ export const ConnectionsList = ({ onSelectConnection }: ConnectionsListProps) =>
 
       <TabsContent value="connections">
         <ConnectionsTab 
-          connections={connections} 
-          onSelectConnection={onSelectConnection} 
+          connections={connections}
+          onSelectConnection={onSelectConnection}
         />
       </TabsContent>
 
