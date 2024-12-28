@@ -112,10 +112,11 @@ export const useMessages = (recipientId: string) => {
         .from('user_preferences')
         .select('preferred_language')
         .eq('user_id', recipientId)
-        .single();
+        .maybeSingle();  // Changed from .single() to .maybeSingle()
 
       if (prefsError) throw prefsError;
 
+      // If no preferences exist, use default language
       const targetLanguage = recipientPrefs?.preferred_language || 'en';
 
       // Translate the message
@@ -133,7 +134,7 @@ export const useMessages = (recipientId: string) => {
         .from('user_preferences')
         .select('has_sent_first_message')
         .eq('user_id', user.user.id)
-        .single();
+        .maybeSingle();  // Changed from .single() to .maybeSingle()
 
       if (prefError) throw prefError;
 
@@ -158,8 +159,11 @@ export const useMessages = (recipientId: string) => {
       if (isFirstMessage) {
         const { error: updateError } = await supabase
           .from('user_preferences')
-          .update({ has_sent_first_message: true })
-          .eq('user_id', user.user.id);
+          .upsert({ 
+            user_id: user.user.id,
+            has_sent_first_message: true,
+            preferred_language: outgoingLanguage
+          });
 
         if (updateError) throw updateError;
 
