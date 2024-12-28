@@ -1,29 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Connection, Profile } from "@/integrations/supabase/types/tables";
+import { Connection } from "@/integrations/supabase/types/tables";
 import { toast } from "sonner";
-
-// Type guard to check if an object is a valid Profile
-const isValidProfile = (profile: any): profile is Profile => {
-  return (
-    profile &&
-    typeof profile.id === 'string' &&
-    typeof profile.username === 'string' &&
-    typeof profile.display_name === 'string'
-  );
-};
-
-// Type guard to check if an object is a valid Connection with profiles
-const isValidConnection = (connection: any): connection is Connection => {
-  return (
-    connection &&
-    typeof connection.id === 'string' &&
-    typeof connection.requester_id === 'string' &&
-    typeof connection.recipient_id === 'string' &&
-    typeof connection.status === 'string' &&
-    isValidProfile(connection.profiles)
-  );
-};
 
 export const useConnections = () => {
   const [connections, setConnections] = useState<Connection[]>([]);
@@ -39,8 +17,20 @@ export const useConnections = () => {
       const { data: requesterConnections, error: requesterError } = await supabase
         .from('connections')
         .select(`
-          *,
-          recipient:profiles!connections_profiles_recipient_fk(*)
+          id,
+          requester_id,
+          recipient_id,
+          status,
+          created_at,
+          updated_at,
+          profiles:recipient:profiles!connections_profiles_recipient_fk (
+            id,
+            username,
+            display_name,
+            avatar_url,
+            created_at,
+            updated_at
+          )
         `)
         .eq('requester_id', user.id)
         .eq('status', 'accepted');
@@ -51,34 +41,44 @@ export const useConnections = () => {
       const { data: recipientConnections, error: recipientError } = await supabase
         .from('connections')
         .select(`
-          *,
-          profiles:profiles!connections_profiles_requester_fk(*)
+          id,
+          requester_id,
+          recipient_id,
+          status,
+          created_at,
+          updated_at,
+          profiles:profiles!connections_profiles_requester_fk (
+            id,
+            username,
+            display_name,
+            avatar_url,
+            created_at,
+            updated_at
+          )
         `)
         .eq('recipient_id', user.id)
         .eq('status', 'accepted');
 
       if (recipientError) throw recipientError;
 
-      // Process and combine connections
-      const validRequesterConnections = (requesterConnections || [])
-        .filter(conn => conn.recipient)
-        .map(conn => ({
-          ...conn,
-          profiles: conn.recipient
-        }))
-        .filter(isValidConnection);
-
-      const validRecipientConnections = (recipientConnections || [])
-        .filter(isValidConnection);
-
-      const allConnections = [...validRequesterConnections, ...validRecipientConnections];
-
       // Fetch pending received requests
       const { data: receivedData, error: receivedError } = await supabase
         .from('connections')
         .select(`
-          *,
-          profiles:profiles!connections_profiles_requester_fk(*)
+          id,
+          requester_id,
+          recipient_id,
+          status,
+          created_at,
+          updated_at,
+          profiles:profiles!connections_profiles_requester_fk (
+            id,
+            username,
+            display_name,
+            avatar_url,
+            created_at,
+            updated_at
+          )
         `)
         .eq('recipient_id', user.id)
         .eq('status', 'pending');
@@ -89,17 +89,38 @@ export const useConnections = () => {
       const { data: sentData, error: sentError } = await supabase
         .from('connections')
         .select(`
-          *,
-          profiles:profiles!connections_profiles_recipient_fk(*)
+          id,
+          requester_id,
+          recipient_id,
+          status,
+          created_at,
+          updated_at,
+          profiles:profiles!connections_profiles_recipient_fk (
+            id,
+            username,
+            display_name,
+            avatar_url,
+            created_at,
+            updated_at
+          )
         `)
         .eq('requester_id', user.id)
         .eq('status', 'pending');
 
       if (sentError) throw sentError;
 
+      // Process and combine connections
+      const allConnections = [
+        ...(requesterConnections || []).map(conn => ({
+          ...conn,
+          profiles: conn.profiles
+        })),
+        ...(recipientConnections || [])
+      ] as Connection[];
+
       setConnections(allConnections);
-      setPendingReceived((receivedData || []).filter(isValidConnection));
-      setPendingSent((sentData || []).filter(isValidConnection));
+      setPendingReceived(receivedData || []);
+      setPendingSent(sentData || []);
     } catch (error: any) {
       toast.error("Error fetching connections");
       console.error("Error fetching connections:", error);
