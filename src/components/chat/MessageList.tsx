@@ -6,7 +6,6 @@ import { useMessages } from "@/hooks/useMessages";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { getMessageLanguageContent } from "@/utils/messageUtils";
 
 interface MessageListProps {
   messages: Message[];
@@ -69,7 +68,7 @@ export const MessageList = ({
           id,
           content,
           sender_id,
-          profiles (
+          profiles:sender_id (
             display_name
           )
         `)

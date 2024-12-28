@@ -46,11 +46,13 @@ export const ChatPreview = ({ user1, user2 }: ChatPreviewProps) => {
           message={user1.message}
           isOutgoing={false}
           timestamp="2 min ago"
+          messageId="preview-1"
         />
         <ChatMessage
           message={user2.message}
           isOutgoing={true}
           timestamp="Just now"
+          messageId="preview-2"
         />
       </div>
     </div>

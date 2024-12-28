@@ -9,10 +9,12 @@ import { useSearchParams, Link } from "react-router-dom";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Message } from "@/types/message.types";
 
 export const ChatContainer = () => {
   const [searchParams] = useSearchParams();
   const recipientId = searchParams.get('recipient');
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   
   if (!recipientId) {
     return (
@@ -52,6 +54,10 @@ export const ChatContainer = () => {
     // Implementation for translating all messages
   };
 
+  const handleReply = (message: Message) => {
+    setReplyingTo(message);
+  };
+
   return (
     <div className="flex flex-col h-full bg-background text-foreground">
       <div className="flex-1 overflow-hidden">
@@ -64,6 +70,8 @@ export const ChatContainer = () => {
           isTyping={isTyping}
           onTranslateAll={handleTranslateAll}
           recipientId={recipientId}
+          onReply={handleReply}
+          replyingTo={replyingTo}
         />
       </div>
 
