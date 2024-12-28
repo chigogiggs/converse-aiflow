@@ -139,7 +139,12 @@ export const ChatMessage = ({
               </motion.div>
             </TooltipTrigger>
             <TooltipContent className="bg-popover text-popover-foreground border-border/50">
-              <p>{isMobile ? "Tap" : "Click"} to see original message</p>
+              <p>
+                {isOutgoing 
+                  ? `${isMobile ? "Tap" : "Click"} to see what the other person saw`
+                  : `${isMobile ? "Tap" : "Click"} to see original message`
+                }
+              </p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
