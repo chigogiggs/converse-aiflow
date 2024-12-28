@@ -19,7 +19,7 @@ interface ChatMessageProps {
     text: string;
     senderName: string;
   };
-  onReply?: (message: any) => void;
+  onReply?: (message: Message) => void;
   onDelete?: (messageId: string) => void;
   onPin?: (messageId: string) => void;
   onStar?: (messageId: string) => void;
@@ -86,7 +86,13 @@ export const ChatMessage = ({
 
   return (
     <MessageContextMenu
-      message={{ id: messageId, senderId, text: message }}
+      message={{
+        id: messageId,
+        text: message,
+        isOutgoing,
+        timestamp,
+        senderId
+      }}
       onReply={onReply || (() => {})}
       onDelete={onDelete || (() => {})}
       onPin={onPin || (() => {})}

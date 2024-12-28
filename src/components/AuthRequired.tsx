@@ -15,11 +15,6 @@ export const AuthRequired = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Clear any stale auth state first
-        if (!PUBLIC_ROUTES.includes(location.pathname)) {
-          localStorage.removeItem('supabase.auth.token');
-        }
-
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
@@ -36,6 +31,7 @@ export const AuthRequired = ({ children }: { children: React.ReactNode }) => {
             });
             navigate("/login", { replace: true });
           }
+          setIsLoading(false);
           return;
         }
 
@@ -44,9 +40,7 @@ export const AuthRequired = ({ children }: { children: React.ReactNode }) => {
         
         if (userError || !user) {
           console.error("User verification failed:", userError);
-          // Force logout if user verification fails
-          await supabase.auth.signOut({ scope: 'global' });
-          localStorage.clear();
+          await supabase.auth.signOut();
           throw new Error("User verification failed");
         }
 
@@ -66,7 +60,6 @@ export const AuthRequired = ({ children }: { children: React.ReactNode }) => {
 
     checkAuth();
 
-    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_OUT' || !session) {
         setIsAuthenticated(false);
@@ -91,7 +84,6 @@ export const AuthRequired = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  // Only render children if authenticated or on a public route
   if (PUBLIC_ROUTES.includes(location.pathname) || isAuthenticated) {
     return <>{children}</>;
   }

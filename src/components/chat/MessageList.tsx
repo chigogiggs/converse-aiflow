@@ -68,7 +68,7 @@ export const MessageList = ({
           id,
           content,
           sender_id,
-          profiles:sender_id (
+          sender:profiles!messages_sender_id_fkey (
             display_name
           )
         `)
@@ -78,7 +78,7 @@ export const MessageList = ({
         const repliesMap = data.reduce((acc: Record<string, any>, msg) => {
           acc[msg.id] = {
             text: msg.content,
-            senderName: msg.profiles?.display_name
+            senderName: msg.sender?.display_name
           };
           return acc;
         }, {});
@@ -120,18 +120,6 @@ export const MessageList = ({
     } else {
       setShowSearch(false);
     }
-  };
-
-  const handleDelete = async (messageId: string) => {
-    // Message deletion is handled in the MessageContextMenu component
-  };
-
-  const handlePin = async (messageId: string) => {
-    // Implement pin functionality
-  };
-
-  const handleStar = async (messageId: string) => {
-    // Implement star functionality
   };
 
   return (
@@ -217,9 +205,6 @@ export const MessageList = ({
                       senderId={message.isOutgoing ? undefined : message.senderId}
                       replyToMessage={message.replyToId ? repliedMessages[message.replyToId] : undefined}
                       onReply={() => onReply(message)}
-                      onDelete={handleDelete}
-                      onPin={handlePin}
-                      onStar={handleStar}
                     />
                   </motion.div>
                 );
