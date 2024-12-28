@@ -13,8 +13,8 @@ export const ConnectionItem = ({ connection, onSelect }: ConnectionItemProps) =>
 
   return (
     <button
-      onClick={() => onSelect?.(connection.recipient_id)}
-      className="flex items-center space-x-4 w-full p-2 rounded-lg hover:bg-gray-100 transition-colors"
+      onClick={() => onSelect?.(profile.id)}
+      className="flex items-center space-x-4 w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
     >
       <UserAvatar
         src={profile.avatar_url || undefined}
