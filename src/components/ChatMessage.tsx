@@ -1,12 +1,6 @@
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { MessageSquare, Edit2, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ChatMessageProps {
   message: string;
@@ -14,8 +8,6 @@ interface ChatMessageProps {
   timestamp: string;
   isTranslating?: boolean;
   originalText?: string;
-  onEdit?: () => void;
-  onDelete?: () => void;
 }
 
 export const ChatMessage = ({ 
@@ -23,10 +15,16 @@ export const ChatMessage = ({
   isOutgoing, 
   timestamp, 
   isTranslating,
-  originalText,
-  onEdit,
-  onDelete
+  originalText
 }: ChatMessageProps) => {
+  const [showOriginal, setShowOriginal] = useState(false);
+
+  const toggleOriginal = () => {
+    if (originalText) {
+      setShowOriginal(!showOriginal);
+    }
+  };
+
   return (
     <div
       className={cn(
@@ -35,60 +33,33 @@ export const ChatMessage = ({
       )}
     >
       <div>
-        <div
+        <motion.div
           className={cn(
-            "relative p-3 rounded-lg",
+            "relative p-3 rounded-lg cursor-pointer",
             isOutgoing
               ? "bg-indigo-600 text-white rounded-br-none"
               : "bg-gray-100 text-gray-800 rounded-bl-none"
           )}
+          onClick={toggleOriginal}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
-          <p className="text-sm">{message}</p>
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={showOriginal ? 'original' : 'translated'}
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
+              transition={{ duration: 0.2 }}
+              className="text-sm"
+            >
+              {showOriginal ? originalText : message}
+            </motion.p>
+          </AnimatePresence>
           {isTranslating && (
             <span className="text-xs opacity-70">Translating...</span>
           )}
-          {originalText && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    className="h-6 px-2 text-xs"
-                  >
-                    <MessageSquare className="h-3 w-3 mr-1" />
-                    Show Original
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{originalText}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-          <div className="absolute bottom-full right-0 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 mb-1">
-            {onEdit && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 bg-white shadow-sm hover:bg-gray-50"
-                onClick={onEdit}
-              >
-                <Edit2 className="h-3 w-3" />
-              </Button>
-            )}
-            {onDelete && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 bg-white shadow-sm hover:bg-gray-50"
-                onClick={onDelete}
-              >
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            )}
-          </div>
-        </div>
+        </motion.div>
         <span className="text-xs text-gray-500 leading-none">{timestamp}</span>
       </div>
     </div>

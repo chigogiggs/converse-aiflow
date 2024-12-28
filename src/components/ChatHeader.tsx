@@ -1,23 +1,33 @@
 import { Button } from "./ui/button";
 import { UserAvatar } from "./UserAvatar";
-import { Settings, Phone, Video } from "lucide-react";
+import { Phone, Video, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface ChatHeaderProps {
   recipientName: string;
   recipientAvatar?: string;
-  onSettingsClick: () => void;
 }
 
-export const ChatHeader = ({ recipientName, recipientAvatar, onSettingsClick }: ChatHeaderProps) => {
+export const ChatHeader = ({ recipientName, recipientAvatar }: ChatHeaderProps) => {
+  const navigate = useNavigate();
+
   return (
-    <div className="flex items-center justify-between border-b p-4">
+    <div className="flex items-center justify-between border-b p-4 bg-white shadow-sm animate-fade-in">
       <div className="flex items-center space-x-4">
+        <Button 
+          variant="ghost" 
+          size="icon"
+          onClick={() => navigate(-1)}
+          className="mr-2"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
         <UserAvatar
           src={recipientAvatar}
           fallback={recipientName[0]}
           size="lg"
         />
-        <div>
+        <div className="animate-fade-in">
           <h2 className="text-xl font-semibold">{recipientName}</h2>
           <p className="text-sm text-gray-500">Online</p>
         </div>
@@ -28,9 +38,6 @@ export const ChatHeader = ({ recipientName, recipientAvatar, onSettingsClick }: 
         </Button>
         <Button variant="ghost" size="icon">
           <Video className="h-5 w-5" />
-        </Button>
-        <Button variant="ghost" size="icon" onClick={onSettingsClick}>
-          <Settings className="h-5 w-5" />
         </Button>
       </div>
     </div>
