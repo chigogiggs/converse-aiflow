@@ -5,7 +5,6 @@ export const translateMessage = async (
   recipientId: string
 ): Promise<{ translatedText: string; targetLanguage: string }> => {
   try {
-    // First check if the user is authenticated
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     if (sessionError || !session) {
       console.error('Session error:', sessionError);
@@ -15,7 +14,7 @@ export const translateMessage = async (
       };
     }
 
-    // Try to get existing preferences using maybeSingle()
+    // Get recipient preferences
     const { data: preferences, error: prefsError } = await supabase
       .from('user_preferences')
       .select('preferred_language')
@@ -24,39 +23,18 @@ export const translateMessage = async (
 
     if (prefsError) {
       console.error('Error fetching preferences:', prefsError);
-      return {
-        translatedText: text,
-        targetLanguage: 'en'
-      };
-    }
+      // Create default preferences if none exist
+      const { error: insertError } = await supabase
+        .from('user_preferences')
+        .insert([
+          { 
+            user_id: recipientId,
+            preferred_language: 'en'
+          }
+        ]);
 
-    // If no preferences exist, create default ones
-    if (!preferences) {
-      try {
-        const { error: createError } = await supabase
-          .from('user_preferences')
-          .insert([
-            { 
-              user_id: recipientId,
-              preferred_language: 'en' // Default to English
-            }
-          ]);
-
-        if (createError) {
-          console.error('Error creating preferences:', createError);
-          return {
-            translatedText: text,
-            targetLanguage: 'en'
-          };
-        }
-
-        // For new users, return original text with default language
-        return {
-          translatedText: text,
-          targetLanguage: 'en'
-        };
-      } catch (error) {
-        console.error('Error in preference creation:', error);
+      if (insertError) {
+        console.error('Error creating preferences:', insertError);
         return {
           translatedText: text,
           targetLanguage: 'en'
@@ -64,7 +42,9 @@ export const translateMessage = async (
       }
     }
 
-    // Get full language name for better translation
+    const targetLanguage = preferences?.preferred_language || 'en';
+
+    // Language mapping for better translation
     const languageMap: { [key: string]: string } = {
       'en': 'English',
       'es': 'Spanish',
@@ -79,10 +59,8 @@ export const translateMessage = async (
       'tr': 'Turkish'
     };
 
-    const targetLanguage = preferences.preferred_language;
     const fullLanguageName = languageMap[targetLanguage] || 'English';
 
-    // Translate using Edge Function
     try {
       const { data: translatedMessage, error: translateError } = await supabase.functions.invoke('translate-message', {
         body: { 
