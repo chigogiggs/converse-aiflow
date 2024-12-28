@@ -42,10 +42,10 @@ export const ChatMessage = ({
             <TooltipTrigger asChild>
               <motion.div
                 className={cn(
-                  "relative p-3 rounded-lg cursor-pointer group backdrop-blur-sm",
+                  "relative p-3 rounded-lg cursor-pointer group neo-blur",
                   isOutgoing
-                    ? "bg-indigo-600/90 text-white rounded-br-none shadow-lg shadow-indigo-500/20"
-                    : "bg-gray-800/90 text-gray-100 rounded-bl-none shadow-lg shadow-gray-900/20"
+                    ? "bg-primary/20 text-primary-foreground rounded-br-none"
+                    : "bg-secondary/20 text-secondary-foreground rounded-bl-none"
                 )}
                 onClick={toggleOriginal}
                 whileHover={{ scale: 1.02 }}
@@ -69,12 +69,12 @@ export const ChatMessage = ({
                     className={cn(
                       "h-4 w-4 absolute -right-5 top-1/2 -translate-y-1/2 transition-all duration-300",
                       isMobile ? "opacity-50" : "opacity-0 group-hover:opacity-50",
-                      isOutgoing ? "text-indigo-400" : "text-gray-400"
+                      isOutgoing ? "text-primary/60" : "text-secondary/60"
                     )}
                   />
                 )}
                 {originalText && isMobile && (
-                  <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-1 h-8 rounded-full bg-indigo-400/30" />
+                  <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-1 h-8 rounded-full bg-primary/30" />
                 )}
                 {isTranslating && (
                   <motion.span 
@@ -87,12 +87,12 @@ export const ChatMessage = ({
                 )}
               </motion.div>
             </TooltipTrigger>
-            <TooltipContent className="bg-gray-800 text-gray-100 border-gray-700">
+            <TooltipContent className="bg-popover text-popover-foreground border-border/50">
               <p>{isMobile ? "Tap" : "Click"} to see original message</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-        <span className="text-xs text-gray-500 leading-none mt-1 block">{timestamp}</span>
+        <span className="text-xs text-muted-foreground leading-none mt-1 block">{timestamp}</span>
       </div>
     </div>
   );
