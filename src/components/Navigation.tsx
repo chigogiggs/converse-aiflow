@@ -70,7 +70,7 @@ export const Navigation = () => {
   const handleLanguageChange = async (languageCode: string) => {
     if (!recipientId || !messages.length) return;
 
-    toast({
+    const loadingToast = toast({
       title: "Translating messages",
       description: "Please wait while we translate your messages...",
     });
@@ -93,6 +93,7 @@ export const Navigation = () => {
         })
       );
 
+      // Update the messages state with the translated messages
       setMessages(updatedMessages);
 
       toast({
@@ -100,6 +101,7 @@ export const Navigation = () => {
         description: "All messages have been translated successfully.",
       });
     } catch (error) {
+      console.error('Translation error:', error);
       toast({
         title: "Translation failed",
         description: "There was an error translating the messages.",
