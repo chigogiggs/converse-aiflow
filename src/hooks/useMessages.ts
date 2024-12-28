@@ -11,13 +11,13 @@ export interface Message {
   originalText?: string;
   isPinned?: boolean;
   isEdited?: boolean;
+  senderId?: string;
 }
 
 export const useMessages = (recipientId: string) => {
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
 
-  // Fetch initial messages
   useEffect(() => {
     const fetchMessages = async () => {
       try {
@@ -39,6 +39,7 @@ export const useMessages = (recipientId: string) => {
           originalText: msg.translated_content ? msg.content : undefined,
           isOutgoing: msg.sender_id === user.id,
           timestamp: new Date(msg.created_at).toLocaleTimeString(),
+          senderId: msg.sender_id  // Added this line
         }));
 
         setMessages(formattedMessages);
@@ -54,7 +55,6 @@ export const useMessages = (recipientId: string) => {
 
     fetchMessages();
 
-    // Subscribe to new messages
     const channel = supabase
       .channel('messages')
       .on(
@@ -77,6 +77,7 @@ export const useMessages = (recipientId: string) => {
               originalText: newMessage.translated_content ? newMessage.content : undefined,
               isOutgoing: newMessage.sender_id === user.id,
               timestamp: new Date(newMessage.created_at).toLocaleTimeString(),
+              senderId: newMessage.sender_id  // Added this line
             }]);
           }
         }
@@ -115,7 +116,6 @@ export const useMessages = (recipientId: string) => {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error("User not authenticated");
 
-      // Save message to database
       const { data: savedMessage, error: saveError } = await supabase
         .from('messages')
         .insert([{
@@ -155,7 +155,6 @@ export const useMessages = (recipientId: string) => {
         variant: "destructive",
       });
 
-      // Remove the message if translation failed
       setMessages(prev => prev.filter(msg => msg.id !== newMessage.id));
     }
   };
