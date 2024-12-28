@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { translateMessage } from "./useMessageTranslation";
@@ -19,7 +19,7 @@ export interface Message {
 export const useMessages = (recipientId: string) => {
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const channelRef = useRef<any>(null);
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -46,7 +46,6 @@ export const useMessages = (recipientId: string) => {
         }));
 
         setMessages(formattedMessages);
-        setIsInitialLoad(false);
       } catch (error: any) {
         console.error('Error fetching messages:', error);
         toast({
@@ -59,7 +58,12 @@ export const useMessages = (recipientId: string) => {
 
     fetchMessages();
 
-    // Only subscribe to real-time updates after initial load
+    // Cleanup previous subscription if it exists
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+    }
+
+    // Create new subscription
     const channel = supabase
       .channel('messages')
       .on(
@@ -72,11 +76,10 @@ export const useMessages = (recipientId: string) => {
         },
         async (payload) => {
           const { data: { user } } = await supabase.auth.getUser();
-          if (!user || isInitialLoad) return;
+          if (!user) return;
 
           if (payload.eventType === 'INSERT') {
             const newMessage = payload.new;
-            // Only add the message if it's not from the current user
             if (newMessage.sender_id !== user.id) {
               setMessages(prev => [...prev, {
                 id: newMessage.id,
@@ -92,10 +95,14 @@ export const useMessages = (recipientId: string) => {
       )
       .subscribe();
 
+    channelRef.current = channel;
+
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+      }
     };
-  }, [recipientId, toast, isInitialLoad]);
+  }, [recipientId, toast]);
 
   const sendMessage = async (
     text: string,
@@ -112,14 +119,12 @@ export const useMessages = (recipientId: string) => {
       isTranslating: true,
     };
 
-    // Add message to local state immediately
     setMessages(prev => [...prev, newMessage]);
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // Get recipient's preferred language
       const { data: recipientPrefs, error: prefsError } = await supabase
         .from('user_preferences')
         .select('preferred_language')
@@ -128,20 +133,17 @@ export const useMessages = (recipientId: string) => {
 
       if (prefsError) throw prefsError;
 
-      // Translate the message to recipient's preferred language
       const { translatedText, targetLanguage } = await translateMessage(text, recipientId);
 
-      // Save the message with correct target language
       const savedMessage = await saveMessage(
         text,
         translatedText,
         outgoingLanguage,
-        recipientPrefs.preferred_language, // Use recipient's preferred language
+        recipientPrefs.preferred_language,
         user.id,
         recipientId
       );
 
-      // Update user preferences if first message
       const { data: preferences } = await supabase
         .from('user_preferences')
         .select('has_sent_first_message')
@@ -152,12 +154,11 @@ export const useMessages = (recipientId: string) => {
         await updateUserPreferences(user.id, outgoingLanguage);
       }
 
-      // Update the message in the UI
       setMessages(prev => prev.map(msg => 
         msg.id === newMessage.id 
           ? { 
               ...msg, 
-              id: savedMessage.id, // Update with the real ID from the database
+              id: savedMessage.id,
               text: translatedText,
               originalText: text,
               isTranslating: false 
@@ -174,7 +175,6 @@ export const useMessages = (recipientId: string) => {
         variant: "destructive",
       });
 
-      // Remove the optimistically added message on error
       setMessages(prev => prev.filter(msg => msg.id !== newMessage.id));
     }
   };
