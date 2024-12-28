@@ -9,9 +9,17 @@ import { ChatSearch } from "./ChatSearch";
 import { PinnedMessages } from "./PinnedMessages";
 import { MessageList } from "./MessageList";
 import { useMessages } from "@/hooks/useMessages";
+import { useSearchParams } from "react-router-dom";
 
 export const ChatContainer = () => {
-  const { messages, sendMessage } = useMessages();
+  const [searchParams] = useSearchParams();
+  const recipientId = searchParams.get('recipient');
+  
+  if (!recipientId) {
+    return <div className="p-4">No recipient selected</div>;
+  }
+
+  const { messages, sendMessage } = useMessages(recipientId);
   const [isTyping, setIsTyping] = useState(false);
   const [showOriginal, setShowOriginal] = useState(false);
   const [pinnedMessages, setPinnedMessages] = useState<string[]>([]);

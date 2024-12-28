@@ -13,7 +13,7 @@ export interface Message {
   isEdited?: boolean;
 }
 
-export const useMessages = () => {
+export const useMessages = (recipientId: string) => {
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
 
@@ -41,6 +41,9 @@ export const useMessages = () => {
 
       if (error) throw error;
 
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error("User not authenticated");
+
       // Save message to database
       const { data: savedMessage, error: saveError } = await supabase
         .from('messages')
@@ -49,8 +52,8 @@ export const useMessages = () => {
           translated_content: translatedMessage.translatedText,
           source_language: outgoingLanguage,
           target_language: incomingLanguage,
-          sender_id: (await supabase.auth.getUser()).data.user?.id,
-          recipient_id: "recipient_id_here" // Replace with actual recipient ID
+          sender_id: user.user.id,
+          recipient_id: recipientId
         }])
         .select()
         .single();
@@ -73,6 +76,8 @@ export const useMessages = () => {
         description: "Your message has been translated and sent",
       });
     } catch (error: any) {
+      console.error("Error sending message:", error);
+      
       toast({
         title: "Error",
         description: error.message,
