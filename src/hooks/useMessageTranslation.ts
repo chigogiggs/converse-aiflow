@@ -6,16 +6,15 @@ export const translateMessage = async (
 ): Promise<{ translatedText: string; targetLanguage: string }> => {
   try {
     // First try to get existing preferences
-    const { data: preferences, error: prefsError } = await supabase
+    let preferences = await supabase
       .from('user_preferences')
       .select('preferred_language')
       .eq('user_id', recipientId)
-      .maybeSingle();
-
-    if (prefsError) {
-      console.error('Error fetching preferences:', prefsError);
-      throw prefsError;
-    }
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (error) throw error;
+        return data;
+      });
 
     // If no preferences exist, create them with default values
     if (!preferences) {
@@ -35,10 +34,7 @@ export const translateMessage = async (
         throw createError;
       }
 
-      // Use the newly created preferences
-      if (newPrefs) {
-        preferences = newPrefs;
-      }
+      preferences = newPrefs;
     }
 
     // Use either existing preference or default to English
