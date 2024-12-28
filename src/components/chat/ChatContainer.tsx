@@ -9,14 +9,31 @@ import { ChatSearch } from "./ChatSearch";
 import { PinnedMessages } from "./PinnedMessages";
 import { MessageList } from "./MessageList";
 import { useMessages } from "@/hooks/useMessages";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export const ChatContainer = () => {
   const [searchParams] = useSearchParams();
   const recipientId = searchParams.get('recipient');
   
   if (!recipientId) {
-    return <div className="p-4">No recipient selected</div>;
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-4">
+        <Alert variant="destructive" className="max-w-md mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>No recipient selected</AlertTitle>
+          <AlertDescription>
+            Please select a contact from your connections list to start a chat.
+          </AlertDescription>
+        </Alert>
+        <Link to="/connections">
+          <Button variant="default">
+            Go to Connections
+          </Button>
+        </Link>
+      </div>
+    );
   }
 
   const { messages, sendMessage } = useMessages(recipientId);
