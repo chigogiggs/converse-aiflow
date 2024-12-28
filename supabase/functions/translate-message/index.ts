@@ -17,7 +17,7 @@ serve(async (req) => {
     const { text, targetLanguage } = await req.json();
     console.log(`Translating text to ${targetLanguage}`);
 
-    const prompt = `Translate this text to ${targetLanguage} and reply only with the translated text without quotes and nothing else.\n\ntext: ${text}`;
+    const prompt = `Translate this text to ${targetLanguage} and when translating, maintain the case (lowercase/uppercase) and reply only with the translated text without quotes and nothing else.\n\ntext: ${text}`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
