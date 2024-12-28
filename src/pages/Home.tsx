@@ -10,11 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Navigation } from "@/components/Navigation";
 import { toast } from "@/hooks/use-toast";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { useConnections } from "@/hooks/useConnections";
 
 const Home = () => {
   const navigate = useNavigate();
-  const { connections } = useConnections();
   
   // Check auth state on mount and set up listener
   useEffect(() => {
@@ -107,7 +105,7 @@ const Home = () => {
                 <Users className="h-5 w-5 text-primary" />
                 <div>
                   <p className="text-sm font-medium">Connections</p>
-                  <p className="text-2xl font-bold">{connections.length}</p>
+                  <p className="text-2xl font-bold">0</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 p-4 bg-primary/5 rounded-lg">

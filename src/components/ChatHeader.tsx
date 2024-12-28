@@ -17,7 +17,7 @@ export const ChatHeader = ({ recipientName, recipientAvatar }: ChatHeaderProps) 
         <Button 
           variant="ghost" 
           size="icon"
-          onClick={() => navigate('/home')}
+          onClick={() => navigate(-1)}
           className="mr-2"
         >
           <ArrowLeft className="h-5 w-5" />

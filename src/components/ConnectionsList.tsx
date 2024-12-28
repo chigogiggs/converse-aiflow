@@ -3,14 +3,12 @@ import { ConnectionsTab } from "./connections/ConnectionsTab";
 import { PendingTab } from "./connections/PendingTab";
 import { Badge } from "./ui/badge";
 import { useConnections } from "@/hooks/useConnections";
-import { useNavigate } from "react-router-dom";
 
 interface ConnectionsListProps {
-  onSelectConnection?: (connectionId: string) => void;
+  onSelectConnection: (connectionId: string) => void;
 }
 
 export const ConnectionsList = ({ onSelectConnection }: ConnectionsListProps) => {
-  const navigate = useNavigate();
   const {
     connections,
     pendingReceived,
@@ -18,14 +16,6 @@ export const ConnectionsList = ({ onSelectConnection }: ConnectionsListProps) =>
     handleAccept,
     handleReject,
   } = useConnections();
-
-  const handleSelectConnection = (connectionId: string) => {
-    if (onSelectConnection) {
-      onSelectConnection(connectionId);
-    } else {
-      navigate(`/chat/${connectionId}`);
-    }
-  };
 
   return (
     <Tabs defaultValue="connections" className="w-full">
@@ -68,7 +58,7 @@ export const ConnectionsList = ({ onSelectConnection }: ConnectionsListProps) =>
       <TabsContent value="connections">
         <ConnectionsTab 
           connections={connections} 
-          onSelectConnection={handleSelectConnection} 
+          onSelectConnection={onSelectConnection} 
         />
       </TabsContent>
 

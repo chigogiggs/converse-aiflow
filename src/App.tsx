@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Chat from "./pages/Chat";
@@ -27,8 +27,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/home" element={<Home />} />
-            <Route path="/chat" element={<Navigate to="/home" replace />} />
-            <Route path="/chat/:recipient" element={<Chat />} />
+            <Route path="/chat" element={<Chat />} />
             <Route path="/connections" element={<Connections />} />
           </Routes>
         </AuthRequired>
