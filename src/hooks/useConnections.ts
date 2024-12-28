@@ -1,7 +1,29 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Connection } from "@/integrations/supabase/types/tables";
+import { Connection, Profile } from "@/integrations/supabase/types/tables";
 import { toast } from "sonner";
+
+// Type guard to check if an object is a valid Profile
+const isValidProfile = (profile: any): profile is Profile => {
+  return (
+    profile &&
+    typeof profile.id === 'string' &&
+    typeof profile.username === 'string' &&
+    typeof profile.display_name === 'string'
+  );
+};
+
+// Type guard to check if an object is a valid Connection with profiles
+const isValidConnection = (connection: any): connection is Connection => {
+  return (
+    connection &&
+    typeof connection.id === 'string' &&
+    typeof connection.requester_id === 'string' &&
+    typeof connection.recipient_id === 'string' &&
+    typeof connection.status === 'string' &&
+    isValidProfile(connection.profiles)
+  );
+};
 
 export const useConnections = () => {
   const [connections, setConnections] = useState<Connection[]>([]);
@@ -37,23 +59,19 @@ export const useConnections = () => {
 
       if (recipientError) throw recipientError;
 
-      // Combine both sets of accepted connections with proper type assertions
-      const allConnections = [
-        ...((requesterConnections || [])
-          .filter(conn => conn.recipient && 
-            'id' in conn.recipient && 
-            'username' in conn.recipient && 
-            'display_name' in conn.recipient)
-          .map(conn => ({
-            ...conn,
-            profiles: conn.recipient
-          }))),
-        ...((recipientConnections || [])
-          .filter(conn => conn.profiles && 
-            'id' in conn.profiles && 
-            'username' in conn.profiles && 
-            'display_name' in conn.profiles))
-      ] as Connection[];
+      // Process and combine connections
+      const validRequesterConnections = (requesterConnections || [])
+        .filter(conn => conn.recipient)
+        .map(conn => ({
+          ...conn,
+          profiles: conn.recipient
+        }))
+        .filter(isValidConnection);
+
+      const validRecipientConnections = (recipientConnections || [])
+        .filter(isValidConnection);
+
+      const allConnections = [...validRequesterConnections, ...validRecipientConnections];
 
       // Fetch pending received requests
       const { data: receivedData, error: receivedError } = await supabase
@@ -80,20 +98,8 @@ export const useConnections = () => {
       if (sentError) throw sentError;
 
       setConnections(allConnections);
-      setPendingReceived(
-        (receivedData || [])
-          .filter(conn => conn.profiles && 
-            'id' in conn.profiles && 
-            'username' in conn.profiles && 
-            'display_name' in conn.profiles) as Connection[]
-      );
-      setPendingSent(
-        (sentData || [])
-          .filter(conn => conn.profiles && 
-            'id' in conn.profiles && 
-            'username' in conn.profiles && 
-            'display_name' in conn.profiles) as Connection[]
-      );
+      setPendingReceived((receivedData || []).filter(isValidConnection));
+      setPendingSent((sentData || []).filter(isValidConnection));
     } catch (error: any) {
       toast.error("Error fetching connections");
       console.error("Error fetching connections:", error);
