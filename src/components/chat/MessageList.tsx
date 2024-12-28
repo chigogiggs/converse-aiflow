@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { supabase } from "@/integrations/supabase/client";
+import { getMessageLanguageContent } from "@/utils/messageUtils";
 
 interface MessageListProps {
   messages: Message[];
@@ -33,6 +34,25 @@ export const MessageList = ({
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const loadPreferredLanguage = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('preferred_language')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.preferred_language) {
+        setDisplayLanguage(profile.preferred_language);
+      }
+    };
+
+    loadPreferredLanguage();
+  }, []);
+
+  useEffect(() => {
     const markMessagesAsRead = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -48,7 +68,6 @@ export const MessageList = ({
     markMessagesAsRead();
   }, [recipientId, messages]);
 
-  // Auto scroll to bottom when new messages arrive
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({
@@ -112,8 +131,12 @@ export const MessageList = ({
                 (message.originalText?.toLowerCase().includes(searchQuery.toLowerCase()))
               )
               .map((message, index) => {
-                const displayText = message.isOutgoing ? message.originalText || message.text : message.text;
-                const originalText = message.isOutgoing ? message.text : message.originalText;
+                const displayText = message.isOutgoing 
+                  ? message.text 
+                  : getMessageLanguageContent(message, displayLanguage);
+                const originalText = message.isOutgoing 
+                  ? message.translations?.[displayLanguage] 
+                  : message.text;
 
                 return (
                   <motion.div

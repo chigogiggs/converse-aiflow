@@ -7,7 +7,7 @@ export const formatDatabaseMessage = (
 ): Message => {
   return {
     id: msg.id,
-    text: msg.translations?.[preferredLanguage.toLowerCase()] || msg.content,
+    text: msg.content,
     originalText: msg.content,
     isOutgoing: msg.sender_id === userId,
     timestamp: new Date(msg.created_at).toLocaleTimeString(),
@@ -20,7 +20,7 @@ export const getMessageLanguageContent = (
   message: Message,
   language: string
 ): string => {
-  if (!message.translations || message.isOutgoing) {
+  if (!message.translations || !language) {
     return message.text;
   }
   return message.translations[language.toLowerCase()] || message.text;
