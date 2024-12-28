@@ -1,8 +1,9 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Message } from "@/types/message.types";
 import { useMessages } from "@/hooks/useMessages";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MessageContent } from "./message/MessageContent";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MessageListProps {
   messages: Message[];

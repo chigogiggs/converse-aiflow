@@ -5,7 +5,6 @@ import { Smile } from "lucide-react";
 
 interface MessageContentProps {
   messages: Message[];
-  searchQuery: string;
   isTyping: boolean;
   outgoingLanguage: string;
   repliedMessages: Record<string, any>;
@@ -13,14 +12,13 @@ interface MessageContentProps {
 }
 
 export const MessageContent = ({
-  messages = [], // Add default empty array
-  searchQuery,
+  messages = [],
   isTyping,
   outgoingLanguage,
   repliedMessages,
   onReply
 }: MessageContentProps) => {
-  if (!messages) return null; // Add safety check
+  if (!messages) return null;
 
   return (
     <motion.div 
@@ -30,58 +28,52 @@ export const MessageContent = ({
       transition={{ duration: 0.3 }}
     >
       <AnimatePresence mode="popLayout">
-        {messages
-          .filter(message =>
-            !message.is_deleted &&
-            (message.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (message.originalText?.toLowerCase().includes(searchQuery.toLowerCase())))
-          )
-          .map((message, index) => {
-            const displayText = message.isOutgoing 
-              ? message.text 
-              : message.text;
-            const originalText = message.isOutgoing 
-              ? message.translations?.[outgoingLanguage] 
-              : message.text;
+        {messages.map((message, index) => {
+          const displayText = message.isOutgoing 
+            ? message.text 
+            : message.text;
+          const originalText = message.isOutgoing 
+            ? message.translations?.[outgoingLanguage] 
+            : message.text;
 
-            return (
-              <motion.div
-                key={message.id}
-                initial={{ 
-                  opacity: 0, 
-                  x: message.isOutgoing ? 20 : -20,
-                  scale: 0.9 
-                }}
-                animate={{ 
-                  opacity: 1, 
-                  x: 0,
-                  scale: 1 
-                }}
-                exit={{ 
-                  opacity: 0, 
-                  scale: 0.9,
-                  transition: { duration: 0.2 } 
-                }}
-                transition={{ 
-                  duration: 0.3,
-                  delay: index * 0.1 
-                }}
-                className="group relative"
-              >
-                <ChatMessage
-                  messageId={message.id}
-                  message={displayText}
-                  isOutgoing={message.isOutgoing}
-                  timestamp={message.timestamp}
-                  isTranslating={message.isTranslating}
-                  originalText={originalText}
-                  senderId={message.isOutgoing ? undefined : message.senderId}
-                  replyToMessage={message.replyToId ? repliedMessages[message.replyToId] : undefined}
-                  onReply={() => onReply(message)}
-                />
-              </motion.div>
-            );
-          })}
+          return (
+            <motion.div
+              key={message.id}
+              initial={{ 
+                opacity: 0, 
+                x: message.isOutgoing ? 20 : -20,
+                scale: 0.9 
+              }}
+              animate={{ 
+                opacity: 1, 
+                x: 0,
+                scale: 1 
+              }}
+              exit={{ 
+                opacity: 0, 
+                scale: 0.9,
+                transition: { duration: 0.2 } 
+              }}
+              transition={{ 
+                duration: 0.3,
+                delay: index * 0.1 
+              }}
+              className="group relative"
+            >
+              <ChatMessage
+                messageId={message.id}
+                message={displayText}
+                isOutgoing={message.isOutgoing}
+                timestamp={message.timestamp}
+                isTranslating={message.isTranslating}
+                originalText={originalText}
+                senderId={message.isOutgoing ? undefined : message.senderId}
+                replyToMessage={message.replyToId ? repliedMessages[message.replyToId] : undefined}
+                onReply={() => onReply(message)}
+              />
+            </motion.div>
+          );
+        })}
       </AnimatePresence>
       {isTyping && (
         <motion.div

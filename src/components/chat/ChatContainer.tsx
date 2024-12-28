@@ -38,7 +38,6 @@ export const ChatContainer = () => {
   const { messages, sendMessage } = useMessages(recipientId);
   const [isTyping, setIsTyping] = useState(false);
   const [pinnedMessages, setPinnedMessages] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const handleTyping = async () => {
@@ -65,8 +64,6 @@ export const ChatContainer = () => {
 
         <MessageList
           messages={messages}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
           isTyping={isTyping}
           onTranslateAll={handleTranslateAll}
           recipientId={recipientId}
