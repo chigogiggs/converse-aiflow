@@ -3,6 +3,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Languages } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ChatMessageProps {
   message: string;
@@ -20,6 +21,7 @@ export const ChatMessage = ({
   originalText
 }: ChatMessageProps) => {
   const [showOriginal, setShowOriginal] = useState(false);
+  const isMobile = useIsMobile();
 
   const toggleOriginal = () => {
     if (originalText) {
@@ -64,11 +66,14 @@ export const ChatMessage = ({
                 {originalText && (
                   <Languages 
                     className={cn(
-                      "h-4 w-4 absolute -right-5 top-1/2 -translate-y-1/2 opacity-0 transition-opacity",
-                      "group-hover:opacity-50",
+                      "h-4 w-4 absolute -right-5 top-1/2 -translate-y-1/2 transition-opacity",
+                      isMobile ? "opacity-50" : "opacity-0 group-hover:opacity-50",
                       isOutgoing ? "text-indigo-600" : "text-gray-500"
                     )}
                   />
+                )}
+                {originalText && isMobile && (
+                  <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-1 h-8 rounded-full bg-indigo-400 opacity-30" />
                 )}
                 {isTranslating && (
                   <span className="text-xs opacity-70">Translating...</span>
@@ -76,7 +81,7 @@ export const ChatMessage = ({
               </motion.div>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Tap to see original message</p>
+              <p>{isMobile ? "Tap" : "Click"} to see original message</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
