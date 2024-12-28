@@ -16,7 +16,17 @@ export const useConnections = () => {
       // Fetch accepted connections where user is requester
       const { data: requesterConnections, error: requesterError } = await supabase
         .from('connections')
-        .select('*, recipient:profiles!connections_recipient_id_fkey(*)')
+        .select(`
+          *,
+          recipient:profiles!connections_recipient_id_fkey (
+            id,
+            username,
+            display_name,
+            avatar_url,
+            created_at,
+            updated_at
+          )
+        `)
         .eq('requester_id', user.id)
         .eq('status', 'accepted');
 
@@ -25,7 +35,17 @@ export const useConnections = () => {
       // Fetch accepted connections where user is recipient
       const { data: recipientConnections, error: recipientError } = await supabase
         .from('connections')
-        .select('*, profiles:profiles!connections_requester_id_fkey(*)')
+        .select(`
+          *,
+          requester:profiles!connections_requester_id_fkey (
+            id,
+            username,
+            display_name,
+            avatar_url,
+            created_at,
+            updated_at
+          )
+        `)
         .eq('recipient_id', user.id)
         .eq('status', 'accepted');
 
@@ -34,7 +54,17 @@ export const useConnections = () => {
       // Fetch pending received requests
       const { data: receivedData, error: receivedError } = await supabase
         .from('connections')
-        .select('*, profiles:profiles!connections_requester_id_fkey(*)')
+        .select(`
+          *,
+          requester:profiles!connections_requester_id_fkey (
+            id,
+            username,
+            display_name,
+            avatar_url,
+            created_at,
+            updated_at
+          )
+        `)
         .eq('recipient_id', user.id)
         .eq('status', 'pending');
 
@@ -43,7 +73,17 @@ export const useConnections = () => {
       // Fetch pending sent requests
       const { data: sentData, error: sentError } = await supabase
         .from('connections')
-        .select('*, profiles:profiles!connections_recipient_id_fkey(*)')
+        .select(`
+          *,
+          recipient:profiles!connections_recipient_id_fkey (
+            id,
+            username,
+            display_name,
+            avatar_url,
+            created_at,
+            updated_at
+          )
+        `)
         .eq('requester_id', user.id)
         .eq('status', 'pending');
 
@@ -53,19 +93,31 @@ export const useConnections = () => {
       const allConnections = [
         ...(requesterConnections || []).map(conn => ({
           ...conn,
-          recipient: conn.recipient,
-          profiles: null
+          profiles: null,
+          recipient: conn.recipient
         })),
         ...(recipientConnections || []).map(conn => ({
           ...conn,
-          recipient: conn.profiles,
-          profiles: null
+          profiles: conn.requester,
+          recipient: null
         }))
-      ] as Connection[];
+      ];
+
+      const receivedConnections = (receivedData || []).map(conn => ({
+        ...conn,
+        profiles: conn.requester,
+        recipient: null
+      }));
+
+      const sentConnections = (sentData || []).map(conn => ({
+        ...conn,
+        profiles: null,
+        recipient: conn.recipient
+      }));
 
       setConnections(allConnections);
-      setPendingReceived(receivedData || []);
-      setPendingSent(sentData || []);
+      setPendingReceived(receivedConnections);
+      setPendingSent(sentConnections);
     } catch (error: any) {
       toast.error("Error fetching connections");
       console.error("Error fetching connections:", error);
