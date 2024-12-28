@@ -1,143 +1,50 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { Logo } from "@/components/Logo";
+import { SignInForm } from "@/components/SignInForm";
+import { DeleteAllDataButton } from "@/components/DeleteAllDataButton";
 
-const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
-
-  const validateForm = () => {
-    if (!email || !email.includes('@')) {
-      toast({
-        title: "Invalid email",
-        description: "Please enter a valid email address",
-        variant: "destructive",
-      });
-      return false;
-    }
-    if (!password || password.length < 6) {
-      toast({
-        title: "Invalid password",
-        description: "Password must be at least 6 characters long",
-        variant: "destructive",
-      });
-      return false;
-    }
-    return true;
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-
-    try {
-      setIsLoading(true);
-
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        let errorMessage = "An unexpected error occurred. Please try again.";
-        
-        // Handle specific error cases
-        if (error.message.includes("Invalid login credentials")) {
-          errorMessage = "Invalid email or password. Please check your credentials and try again.";
-        } else if (error.message.includes("Email not confirmed")) {
-          errorMessage = "Please verify your email address before logging in.";
-        }
-
-        toast({
-          title: "Login failed",
-          description: errorMessage,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (data.user) {
-        toast({
-          title: "Welcome back!",
-          description: "Logged in successfully",
-        });
-        navigate("/home");
-      }
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+export const Login = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-tr from-blue-50 to-indigo-50 px-4">
-      <div className="w-full max-w-md">
-        <div className="flex justify-center mb-8">
-          <Logo />
+    <div className="container relative min-h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
+      <div className="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex dark:border-r">
+        <div className="absolute inset-0 bg-zinc-900" />
+        <div className="relative z-20 flex items-center text-lg font-medium">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="mr-2 h-6 w-6"
+          >
+            <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
+          </svg>
+          Acme Inc
         </div>
-        <div className="text-center mb-8">
-          <p className="text-gray-600">Welcome back! Please sign in to continue.</p>
-        </div>
-        
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8">
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full"
-                placeholder="Enter your email"
-                required
-                disabled={isLoading}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full"
-                placeholder="Enter your password"
-                required
-                disabled={isLoading}
-              />
-            </div>
-            <Button 
-              type="submit" 
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? "Signing in..." : "Sign In"}
-            </Button>
-          </form>
-          
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Don't have an account?{" "}
-              <button
-                type="button"
-                onClick={() => navigate("/signup")}
-                className="text-indigo-600 hover:text-indigo-700 font-medium"
-                disabled={isLoading}
-              >
-                Sign up
-              </button>
+        <div className="relative z-20 mt-auto">
+          <blockquote className="space-y-2">
+            <p className="text-lg">
+              &ldquo;This library has saved me countless hours of work and
+              helped me deliver stunning designs to my clients faster than
+              ever before.&rdquo;
             </p>
+            <footer className="text-sm">Sofia Davis</footer>
+          </blockquote>
+        </div>
+      </div>
+      <div className="lg:p-8">
+        <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+          <div className="flex flex-col space-y-2 text-center">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Welcome back
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Enter your email below to login to your account
+            </p>
+          </div>
+          <SignInForm />
+          <div className="mt-4">
+            <DeleteAllDataButton />
           </div>
         </div>
       </div>
