@@ -16,19 +16,22 @@ export const PendingConnectionItem = ({
   onReject, 
   showActions = false 
 }: PendingConnectionItemProps) => {
-  if (!connection.profiles) return null;
+  // Get the profile to display (either recipient for sent requests or profiles for received requests)
+  const profile = connection.recipient || connection.profiles;
+  
+  if (!profile) return null;
 
   return (
     <div className="flex items-center justify-between p-4 bg-card rounded-lg border">
       <div className="flex items-center gap-4">
         <UserAvatar
-          src={connection.profiles.avatar_url || undefined}
-          fallback={connection.profiles.display_name?.[0] || "?"}
+          src={profile.avatar_url || undefined}
+          fallback={profile.display_name?.[0] || "?"}
           size="md"
         />
         <div>
-          <p className="font-medium">{connection.profiles.display_name}</p>
-          <p className="text-sm text-gray-500">@{connection.profiles.username}</p>
+          <p className="font-medium">{profile.display_name}</p>
+          <p className="text-sm text-gray-500">@{profile.username}</p>
         </div>
       </div>
       {showActions ? (
