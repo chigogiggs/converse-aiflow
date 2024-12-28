@@ -6,7 +6,7 @@ import { ChatSettings } from "./ChatSettings";
 import { PinnedMessages } from "./PinnedMessages";
 import { MessageList } from "./MessageList";
 import { useMessages } from "@/hooks/useMessages";
-import { useSearchParams, Link } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export const ChatContainer = () => {
-  const [searchParams] = useSearchParams();
-  const recipientId = searchParams.get('recipient');
+  const { recipient: recipientId } = useParams();
   
   // Use useQuery to fetch recipient profile
   const { data: recipientProfile } = useQuery({
