@@ -100,40 +100,46 @@ export const MessageList = ({
                 message.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (message.originalText?.toLowerCase().includes(searchQuery.toLowerCase()))
               )
-              .map((message, index) => (
-                <motion.div
-                  key={message.id}
-                  initial={{ 
-                    opacity: 0, 
-                    x: message.isOutgoing ? 20 : -20,
-                    scale: 0.9 
-                  }}
-                  animate={{ 
-                    opacity: 1, 
-                    x: 0,
-                    scale: 1 
-                  }}
-                  exit={{ 
-                    opacity: 0, 
-                    scale: 0.9,
-                    transition: { duration: 0.2 } 
-                  }}
-                  transition={{ 
-                    duration: 0.3,
-                    delay: index * 0.1 
-                  }}
-                  className="group relative"
-                >
-                  <ChatMessage
-                    message={message.text}
-                    isOutgoing={message.isOutgoing}
-                    timestamp={message.timestamp}
-                    isTranslating={message.isTranslating}
-                    originalText={message.originalText}
-                    senderId={message.isOutgoing ? undefined : message.senderId}
-                  />
-                </motion.div>
-              ))}
+              .map((message, index) => {
+                // For incoming messages, show translated version by default
+                const displayText = message.isOutgoing ? message.originalText || message.text : message.text;
+                const originalText = message.isOutgoing ? message.text : message.originalText;
+
+                return (
+                  <motion.div
+                    key={message.id}
+                    initial={{ 
+                      opacity: 0, 
+                      x: message.isOutgoing ? 20 : -20,
+                      scale: 0.9 
+                    }}
+                    animate={{ 
+                      opacity: 1, 
+                      x: 0,
+                      scale: 1 
+                    }}
+                    exit={{ 
+                      opacity: 0, 
+                      scale: 0.9,
+                      transition: { duration: 0.2 } 
+                    }}
+                    transition={{ 
+                      duration: 0.3,
+                      delay: index * 0.1 
+                    }}
+                    className="group relative"
+                  >
+                    <ChatMessage
+                      message={displayText}
+                      isOutgoing={message.isOutgoing}
+                      timestamp={message.timestamp}
+                      isTranslating={message.isTranslating}
+                      originalText={originalText}
+                      senderId={message.isOutgoing ? undefined : message.senderId}
+                    />
+                  </motion.div>
+                );
+              })}
           </AnimatePresence>
           {isTyping && (
             <motion.div
