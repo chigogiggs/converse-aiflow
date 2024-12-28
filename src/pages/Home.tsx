@@ -14,9 +14,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 const Home = () => {
   const navigate = useNavigate();
   
-  // Check auth state on mount and set up listener
   useEffect(() => {
-    // Check initial session
     const checkAuth = async () => {
       const { data: { session }, error } = await supabase.auth.getSession();
       if (error || !session) {
@@ -28,14 +26,12 @@ const Home = () => {
     
     checkAuth();
 
-    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT' || !session) {
         navigate("/login");
       }
     });
 
-    // Cleanup subscription
     return () => {
       subscription.unsubscribe();
     };
@@ -43,7 +39,6 @@ const Home = () => {
 
   const { data: currentUser, isLoading, error } = useCurrentUser();
 
-  // Handle loading and error states
   if (error) {
     toast({
       title: "Error loading profile",
@@ -70,11 +65,14 @@ const Home = () => {
     );
   }
 
+  const handleSelectConnection = (connectionId: string) => {
+    navigate(`/chat?recipient=${connectionId}`);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       <Navigation />
       <div className="container mx-auto px-4 py-8 space-y-8">
-        {/* User Profile Card */}
         <Card className="w-full max-w-2xl mx-auto bg-card/50 backdrop-blur-sm">
           <CardHeader className="flex flex-row items-center justify-between">
             <div className="flex items-center gap-4">
@@ -119,7 +117,6 @@ const Home = () => {
           </CardContent>
         </Card>
 
-        {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
           <Button
             className="h-auto py-4 px-6"
@@ -138,17 +135,12 @@ const Home = () => {
           </Button>
         </div>
 
-        {/* Find Connections Section */}
         <div className="animate-fade-in">
           <UserSearch currentUserId={currentUser.id} />
         </div>
 
-        {/* Connections List */}
         <div className="animate-fade-in" style={{ animationDelay: "0.2s" }}>
-          <ConnectionsList onSelectConnection={(connectionId) => {
-            console.log("Selected connection:", connectionId);
-            navigate(`/chat?connection=${connectionId}`);
-          }} />
+          <ConnectionsList onSelectConnection={handleSelectConnection} />
         </div>
       </div>
     </div>
