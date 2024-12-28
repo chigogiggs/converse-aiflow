@@ -39,12 +39,21 @@ export const useConnections = () => {
 
       // Combine both sets of accepted connections with proper type assertions
       const allConnections = [
-        ...(requesterConnections || []).map(conn => ({
-          ...conn,
-          profiles: conn.recipient
-        })),
-        ...(recipientConnections || [])
-      ].filter(conn => conn.profiles) as Connection[];
+        ...((requesterConnections || [])
+          .filter(conn => conn.recipient && 
+            'id' in conn.recipient && 
+            'username' in conn.recipient && 
+            'display_name' in conn.recipient)
+          .map(conn => ({
+            ...conn,
+            profiles: conn.recipient
+          }))),
+        ...((recipientConnections || [])
+          .filter(conn => conn.profiles && 
+            'id' in conn.profiles && 
+            'username' in conn.profiles && 
+            'display_name' in conn.profiles))
+      ] as Connection[];
 
       // Fetch pending received requests
       const { data: receivedData, error: receivedError } = await supabase
@@ -71,8 +80,20 @@ export const useConnections = () => {
       if (sentError) throw sentError;
 
       setConnections(allConnections);
-      setPendingReceived((receivedData || []).filter(conn => conn.profiles) as Connection[]);
-      setPendingSent((sentData || []).filter(conn => conn.profiles) as Connection[]);
+      setPendingReceived(
+        (receivedData || [])
+          .filter(conn => conn.profiles && 
+            'id' in conn.profiles && 
+            'username' in conn.profiles && 
+            'display_name' in conn.profiles) as Connection[]
+      );
+      setPendingSent(
+        (sentData || [])
+          .filter(conn => conn.profiles && 
+            'id' in conn.profiles && 
+            'username' in conn.profiles && 
+            'display_name' in conn.profiles) as Connection[]
+      );
     } catch (error: any) {
       toast.error("Error fetching connections");
       console.error("Error fetching connections:", error);
