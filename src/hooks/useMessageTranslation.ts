@@ -5,7 +5,7 @@ export const translateMessage = async (
   recipientId: string
 ): Promise<{ translatedText: string; targetLanguage: string }> => {
   // Get recipient's preferred language
-  const { data: recipientPrefs, error: prefsError } = await supabase
+  let { data: recipientPrefs, error: prefsError } = await supabase
     .from('user_preferences')
     .select('preferred_language')
     .eq('user_id', recipientId)
