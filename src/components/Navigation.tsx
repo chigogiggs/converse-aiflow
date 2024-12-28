@@ -1,8 +1,7 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Users, Phone, Video, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { UserAvatar } from "./UserAvatar";
 
@@ -28,14 +27,14 @@ export const Navigation = () => {
   });
 
   return (
-    <nav className="h-16 sticky top-0 z-50 w-full bg-white border-b">
+    <nav className="h-16 sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/40">
       <div className="container mx-auto h-full flex justify-between items-center px-6">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => navigate(-1)}
-            className="mr-2"
+            className="mr-2 text-foreground hover:bg-accent hover:text-accent-foreground"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -48,16 +47,8 @@ export const Navigation = () => {
                 size="lg"
               />
               <div className="animate-fade-in">
-                <h2 className="text-xl font-semibold">{recipientProfile?.display_name}</h2>
-                <p className="text-sm text-gray-500">Online</p>
-              </div>
-              <div className="flex items-center space-x-2 ml-4">
-                <Button variant="ghost" size="icon">
-                  <Phone className="h-5 w-5" />
-                </Button>
-                <Button variant="ghost" size="icon">
-                  <Video className="h-5 w-5" />
-                </Button>
+                <h2 className="text-xl font-semibold text-foreground">{recipientProfile?.display_name}</h2>
+                <p className="text-sm text-muted-foreground">Online</p>
               </div>
             </>
           ) : (
@@ -65,9 +56,9 @@ export const Navigation = () => {
               variant="ghost"
               size="icon"
               onClick={() => navigate("/connections")}
-              className="hidden sm:flex"
+              className="hidden sm:flex text-foreground hover:bg-accent hover:text-accent-foreground"
             >
-              <Users className="h-5 w-5" />
+              <ArrowLeft className="h-5 w-5" />
             </Button>
           )}
         </div>
