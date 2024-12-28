@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Settings, Users, MessageSquare } from "lucide-react";
 import { UserAvatar } from "@/components/UserAvatar";
 import { useNavigate } from "react-router-dom";
+import { useConnections } from "@/hooks/useConnections";
 
 interface UserProfileCardProps {
   user: any;  // Using any for now since we don't have the type
@@ -10,6 +11,7 @@ interface UserProfileCardProps {
 
 export const UserProfileCard = ({ user }: UserProfileCardProps) => {
   const navigate = useNavigate();
+  const { connections } = useConnections();
 
   return (
     <Card className="w-full max-w-2xl mx-auto bg-card/50 backdrop-blur-sm">
@@ -42,7 +44,7 @@ export const UserProfileCard = ({ user }: UserProfileCardProps) => {
             <Users className="h-5 w-5 text-primary" />
             <div>
               <p className="text-sm font-medium">Connections</p>
-              <p className="text-2xl font-bold">0</p>
+              <p className="text-2xl font-bold">{connections.length}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 p-4 bg-primary/5 rounded-lg">
