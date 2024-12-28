@@ -10,20 +10,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useLocation } from "react-router-dom";
 import { useMessages } from "@/hooks/useMessages";
-
-const languages = [
-  { code: "en", name: "English" },
-  { code: "es", name: "Spanish" },
-  { code: "fr", name: "French" },
-  { code: "de", name: "German" },
-  { code: "it", name: "Italian" },
-  { code: "pt", name: "Portuguese" },
-  { code: "ru", name: "Russian" },
-  { code: "zh", name: "Chinese" },
-  { code: "ja", name: "Japanese" },
-  { code: "ko", name: "Korean" },
-  { code: "tr", name: "Turkish" },
-];
+import { useEffect } from "react";
 
 interface LanguageDropdownProps {
   recipientId?: string | null;
@@ -66,6 +53,32 @@ export const LanguageDropdown = ({ recipientId }: LanguageDropdownProps) => {
     }
   };
 
+  // Subscribe to profile changes to update messages in real-time
+  useEffect(() => {
+    const channel = supabase
+      .channel('profile_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${recipientId}`,
+        },
+        async (payload) => {
+          const newLanguage = payload.new.preferred_language;
+          if (newLanguage && location.pathname === '/chat') {
+            await updateMessagesLanguage(newLanguage);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [recipientId, location.pathname]);
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -91,3 +104,17 @@ export const LanguageDropdown = ({ recipientId }: LanguageDropdownProps) => {
     </DropdownMenu>
   );
 };
+
+const languages = [
+  { code: "en", name: "English" },
+  { code: "es", name: "Spanish" },
+  { code: "fr", name: "French" },
+  { code: "de", name: "German" },
+  { code: "it", name: "Italian" },
+  { code: "pt", name: "Portuguese" },
+  { code: "ru", name: "Russian" },
+  { code: "zh", name: "Chinese" },
+  { code: "ja", name: "Japanese" },
+  { code: "ko", name: "Korean" },
+  { code: "tr", name: "Turkish" },
+];

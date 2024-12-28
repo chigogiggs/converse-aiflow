@@ -1,91 +1,97 @@
-import { cn } from "@/lib/utils";
-import { Languages } from "lucide-react";
+import { Message } from "@/types/message.types";
 import { motion, AnimatePresence } from "framer-motion";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ChatMessage } from "@/components/ChatMessage";
+import { Smile } from "lucide-react";
 
 interface MessageContentProps {
-  message: string;
-  originalText?: string;
-  isOutgoing: boolean;
-  isTranslating?: boolean;
-  onToggleOriginal: () => void;
-  showOriginal: boolean;
+  messages: Message[];
+  searchQuery: string;
+  isTyping: boolean;
+  outgoingLanguage: string;
+  repliedMessages: Record<string, any>;
+  onReply: (message: Message) => void;
 }
 
-export const MessageContent = ({ 
-  message, 
-  originalText, 
-  isOutgoing, 
-  isTranslating,
-  onToggleOriginal,
-  showOriginal
+export const MessageContent = ({
+  messages,
+  searchQuery,
+  isTyping,
+  outgoingLanguage,
+  repliedMessages,
+  onReply
 }: MessageContentProps) => {
-  const isMobile = useIsMobile();
-
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <motion.div
-            className={cn(
-              "relative p-3 rounded-lg cursor-pointer group neo-blur",
-              isOutgoing
-                ? "bg-primary/20 text-white rounded-br-none"
-                : "bg-secondary/20 text-white rounded-bl-none"
-            )}
-            onClick={onToggleOriginal}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            layout
-          >
-            <AnimatePresence mode="wait">
-              <motion.p
-                key={showOriginal ? 'original' : 'translated'}
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -5 }}
-                transition={{ duration: 0.2 }}
-                className="text-sm"
+    <motion.div 
+      className="space-y-4 pb-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      <AnimatePresence mode="popLayout">
+        {messages
+          .filter(message =>
+            !message.is_deleted &&
+            (message.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (message.originalText?.toLowerCase().includes(searchQuery.toLowerCase())))
+          )
+          .map((message, index) => {
+            const displayText = message.isOutgoing 
+              ? message.text 
+              : message.text;
+            const originalText = message.isOutgoing 
+              ? message.translations?.[outgoingLanguage] 
+              : message.text;
+
+            return (
+              <motion.div
+                key={message.id}
+                initial={{ 
+                  opacity: 0, 
+                  x: message.isOutgoing ? 20 : -20,
+                  scale: 0.9 
+                }}
+                animate={{ 
+                  opacity: 1, 
+                  x: 0,
+                  scale: 1 
+                }}
+                exit={{ 
+                  opacity: 0, 
+                  scale: 0.9,
+                  transition: { duration: 0.2 } 
+                }}
+                transition={{ 
+                  duration: 0.3,
+                  delay: index * 0.1 
+                }}
+                className="group relative"
               >
-                {showOriginal ? originalText : message}
-              </motion.p>
-            </AnimatePresence>
-            {originalText && (
-              <Languages 
-                className={cn(
-                  "h-4 w-4 absolute top-1/2 -translate-y-1/2 transition-all duration-300",
-                  isMobile ? "opacity-50" : "opacity-0 group-hover:opacity-50",
-                  isOutgoing ? "-left-5 text-primary/60" : "-right-5 text-secondary/60"
-                )}
-              />
-            )}
-            {originalText && isMobile && (
-              <div className={cn(
-                "absolute top-1/2 -translate-y-1/2 w-1 h-8 rounded-full",
-                isOutgoing ? "-left-2 bg-primary/30" : "-right-2 bg-secondary/30"
-              )} />
-            )}
-            {isTranslating && (
-              <motion.span 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-xs opacity-70"
-              >
-                Translating...
-              </motion.span>
-            )}
-          </motion.div>
-        </TooltipTrigger>
-        <TooltipContent className="bg-popover text-popover-foreground border-border/50">
-          <p>
-            {showOriginal 
-              ? `${isMobile ? "Tap" : "Click"} to see translated message`
-              : `${isMobile ? "Tap" : "Click"} to see original message`
-            }
-          </p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+                <ChatMessage
+                  messageId={message.id}
+                  message={displayText}
+                  isOutgoing={message.isOutgoing}
+                  timestamp={message.timestamp}
+                  isTranslating={message.isTranslating}
+                  originalText={originalText}
+                  senderId={message.isOutgoing ? undefined : message.senderId}
+                  replyToMessage={message.replyToId ? repliedMessages[message.replyToId] : undefined}
+                  onReply={() => onReply(message)}
+                />
+              </motion.div>
+            );
+          })}
+      </AnimatePresence>
+      {isTyping && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 10 }}
+          className="text-sm text-gray-400 italic flex items-center gap-2 p-2 bg-gray-800 rounded-lg"
+        >
+          <Smile className="h-4 w-4 animate-bounce text-indigo-400" />
+          <span>Typing in {outgoingLanguage}...</span>
+        </motion.div>
+      )}
+    </motion.div>
   );
 };
