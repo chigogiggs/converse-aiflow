@@ -103,11 +103,7 @@ export const useMessages = (recipientId: string) => {
     };
   }, [recipientId, toast]);
 
-  const sendMessage = async (
-    text: string,
-    outgoingLanguage: string,
-    incomingLanguage: string
-  ) => {
+  const sendMessage = async (text: string, outgoingLanguage: string) => {
     if (!text.trim()) return;
 
     const newMessage: Message = {
@@ -124,48 +120,29 @@ export const useMessages = (recipientId: string) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // Get recipient's preferred language
-      const { data: recipientPrefs, error: prefsError } = await supabase
-        .from('user_preferences')
+      // Get recipient's preferred language from their profile
+      const { data: recipientProfile, error: profileError } = await supabase
+        .from('profiles')
         .select('preferred_language')
-        .eq('user_id', recipientId)
-        .maybeSingle();
+        .eq('id', recipientId)
+        .single();
 
-      if (prefsError) {
-        console.error("Error fetching recipient preferences:", prefsError);
-        // Create default preferences if none exist
-        await supabase
-          .from('user_preferences')
-          .insert([
-            { 
-              user_id: recipientId,
-              preferred_language: 'en'
-            }
-          ]);
+      if (profileError) {
+        console.error("Error fetching recipient profile:", profileError);
+        throw new Error("Failed to get recipient's language preference");
       }
 
-      const targetLanguage = recipientPrefs?.preferred_language || 'en';
+      const targetLanguage = recipientProfile.preferred_language;
       const { translatedText } = await translateMessage(text, recipientId);
 
       const savedMessage = await saveMessage(
         text,
         translatedText,
         outgoingLanguage,
-        targetLanguage, // Use recipient's preferred language as target
+        targetLanguage,
         user.id,
         recipientId
       );
-
-      // Check if user has sent their first message
-      const { data: preferences } = await supabase
-        .from('user_preferences')
-        .select('has_sent_first_message')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (!preferences?.has_sent_first_message) {
-        await updateUserPreferences(user.id, outgoingLanguage);
-      }
 
       setMessages(prev => prev.map(msg => 
         msg.id === newMessage.id 

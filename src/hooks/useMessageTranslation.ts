@@ -5,67 +5,28 @@ export const translateMessage = async (
   recipientId: string
 ): Promise<{ translatedText: string; targetLanguage: string }> => {
   try {
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !session) {
-      console.error('Session error:', sessionError);
+    // Get recipient's preferred language from their profile
+    const { data: recipientProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('preferred_language')
+      .eq('id', recipientId)
+      .single();
+
+    if (profileError) {
+      console.error('Error fetching recipient profile:', profileError);
       return {
         translatedText: text,
         targetLanguage: 'en'
       };
     }
 
-    // Get recipient preferences
-    const { data: preferences, error: prefsError } = await supabase
-      .from('user_preferences')
-      .select('preferred_language')
-      .eq('user_id', recipientId)
-      .maybeSingle();
-
-    if (prefsError) {
-      console.error('Error fetching preferences:', prefsError);
-      // Create default preferences if none exist
-      const { error: insertError } = await supabase
-        .from('user_preferences')
-        .insert([
-          { 
-            user_id: recipientId,
-            preferred_language: 'en'
-          }
-        ]);
-
-      if (insertError) {
-        console.error('Error creating preferences:', insertError);
-        return {
-          translatedText: text,
-          targetLanguage: 'en'
-        };
-      }
-    }
-
-    const targetLanguage = preferences?.preferred_language || 'en';
-
-    // Language mapping for better translation
-    const languageMap: { [key: string]: string } = {
-      'en': 'English',
-      'es': 'Spanish',
-      'fr': 'French',
-      'de': 'German',
-      'it': 'Italian',
-      'pt': 'Portuguese',
-      'ru': 'Russian',
-      'zh': 'Chinese',
-      'ja': 'Japanese',
-      'ko': 'Korean',
-      'tr': 'Turkish'
-    };
-
-    const fullLanguageName = languageMap[targetLanguage] || 'English';
+    const targetLanguage = recipientProfile.preferred_language;
 
     try {
       const { data: translatedMessage, error: translateError } = await supabase.functions.invoke('translate-message', {
         body: { 
           text,
-          targetLanguage: fullLanguageName
+          targetLanguage
         }
       });
 

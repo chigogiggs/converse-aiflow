@@ -8,21 +8,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Map of language codes to full names
-const languageMap: { [key: string]: string } = {
-  'en': 'English',
-  'es': 'Spanish',
-  'fr': 'French',
-  'de': 'German',
-  'it': 'Italian',
-  'pt': 'Portuguese',
-  'ru': 'Russian',
-  'zh': 'Chinese (Simplified)',
-  'ja': 'Japanese',
-  'ko': 'Korean',
-  'tr': 'Turkish',
-};
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -30,10 +15,9 @@ serve(async (req) => {
 
   try {
     const { text, targetLanguage } = await req.json();
-    
-    // Convert language code to full name
-    const fullLanguageName = languageMap[targetLanguage] || targetLanguage;
-    console.log(`Translating text to ${fullLanguageName}`);
+    console.log(`Translating text to ${targetLanguage}`);
+
+    const prompt = `Translate this text to ${targetLanguage} and reply only with the translated text without quotes and nothing else.\n\ntext: ${text}`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -45,12 +29,8 @@ serve(async (req) => {
         model: 'gpt-4o-mini',
         messages: [
           {
-            role: 'system',
-            content: `You are a professional translator. Translate the following text to ${fullLanguageName}. Reply ONLY with the translated text, without quotes or any additional commentary.`
-          },
-          {
             role: 'user',
-            content: text
+            content: prompt
           }
         ],
         temperature: 0.3,
