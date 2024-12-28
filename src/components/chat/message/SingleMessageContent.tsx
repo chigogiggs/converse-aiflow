@@ -31,7 +31,7 @@ export const SingleMessageContent = ({
         {isTranslating ? (
           <div className="animate-pulse">Translating...</div>
         ) : (
-          <p>{showOriginal ? originalText : message}</p>
+          <p>{showOriginal ? originalText || message : message}</p>
         )}
       </div>
       {originalText && !isTranslating && (
