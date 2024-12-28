@@ -15,8 +15,8 @@ export const translateMessage = async (
       };
     }
 
-    // Try to get existing preferences using single() since we expect one row
-    let { data: preferences, error: prefsError } = await supabase
+    // Try to get existing preferences
+    const { data: preferences, error: prefsError } = await supabase
       .from('user_preferences')
       .select('preferred_language')
       .eq('user_id', recipientId)
@@ -24,31 +24,64 @@ export const translateMessage = async (
 
     if (prefsError) {
       console.error('Error fetching preferences:', prefsError);
-      preferences = { preferred_language: 'en' };
+      return {
+        translatedText: text,
+        targetLanguage: 'en'
+      };
     }
 
     // If no preferences exist, create default ones
     if (!preferences) {
-      const { data: newPrefs, error: createError } = await supabase
-        .from('user_preferences')
-        .insert([
-          { 
-            user_id: recipientId,
-            preferred_language: 'en' // Default to English
-          }
-        ])
-        .select('preferred_language')
-        .single();
+      try {
+        const { data: newPrefs, error: createError } = await supabase
+          .from('user_preferences')
+          .insert([
+            { 
+              user_id: recipientId,
+              preferred_language: 'en' // Default to English
+            }
+          ])
+          .select()
+          .single();
 
-      if (createError) {
-        console.error('Error creating preferences:', createError);
+        if (createError) throw createError;
+
+        // Get full language name for better translation
+        const languageMap: { [key: string]: string } = {
+          'en': 'English',
+          'es': 'Spanish',
+          'fr': 'French',
+          'de': 'German',
+          'it': 'Italian',
+          'pt': 'Portuguese',
+          'ru': 'Russian',
+          'zh': 'Chinese',
+          'ja': 'Japanese',
+          'ko': 'Korean',
+          'tr': 'Turkish'
+        };
+
+        // Translate using Edge Function
+        const { data: translatedMessage, error: translateError } = await supabase.functions.invoke('translate-message', {
+          body: { 
+            text,
+            targetLanguage: 'English' // Default for new users
+          }
+        });
+
+        if (translateError) throw translateError;
+
+        return {
+          translatedText: translatedMessage.translatedText,
+          targetLanguage: 'en'
+        };
+      } catch (error) {
+        console.error('Error creating preferences:', error);
         return {
           translatedText: text,
           targetLanguage: 'en'
         };
       }
-
-      preferences = newPrefs;
     }
 
     // Get full language name for better translation
@@ -66,7 +99,7 @@ export const translateMessage = async (
       'tr': 'Turkish'
     };
 
-    const targetLanguage = preferences?.preferred_language || 'en';
+    const targetLanguage = preferences.preferred_language;
     const fullLanguageName = languageMap[targetLanguage] || 'English';
 
     // Translate the message using Edge Function
