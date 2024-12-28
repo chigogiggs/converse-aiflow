@@ -1,6 +1,8 @@
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Languages } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ChatMessageProps {
   message: string;
@@ -33,33 +35,51 @@ export const ChatMessage = ({
       )}
     >
       <div>
-        <motion.div
-          className={cn(
-            "relative p-3 rounded-lg cursor-pointer",
-            isOutgoing
-              ? "bg-indigo-600 text-white rounded-br-none"
-              : "bg-gray-100 text-gray-800 rounded-bl-none"
-          )}
-          onClick={toggleOriginal}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <AnimatePresence mode="wait">
-            <motion.p
-              key={showOriginal ? 'original' : 'translated'}
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -5 }}
-              transition={{ duration: 0.2 }}
-              className="text-sm"
-            >
-              {showOriginal ? originalText : message}
-            </motion.p>
-          </AnimatePresence>
-          {isTranslating && (
-            <span className="text-xs opacity-70">Translating...</span>
-          )}
-        </motion.div>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <motion.div
+                className={cn(
+                  "relative p-3 rounded-lg cursor-pointer group",
+                  isOutgoing
+                    ? "bg-indigo-600 text-white rounded-br-none"
+                    : "bg-gray-100 text-gray-800 rounded-bl-none"
+                )}
+                onClick={toggleOriginal}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <AnimatePresence mode="wait">
+                  <motion.p
+                    key={showOriginal ? 'original' : 'translated'}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    transition={{ duration: 0.2 }}
+                    className="text-sm"
+                  >
+                    {showOriginal ? originalText : message}
+                  </motion.p>
+                </AnimatePresence>
+                {originalText && (
+                  <Languages 
+                    className={cn(
+                      "h-4 w-4 absolute -right-5 top-1/2 -translate-y-1/2 opacity-0 transition-opacity",
+                      "group-hover:opacity-50",
+                      isOutgoing ? "text-indigo-600" : "text-gray-500"
+                    )}
+                  />
+                )}
+                {isTranslating && (
+                  <span className="text-xs opacity-70">Translating...</span>
+                )}
+              </motion.div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Tap to see original message</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         <span className="text-xs text-gray-500 leading-none">{timestamp}</span>
       </div>
     </div>

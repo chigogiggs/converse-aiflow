@@ -1,11 +1,11 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatMessage } from "@/components/ChatMessage";
-import { Smile } from "lucide-react";
+import { Smile, Languages } from "lucide-react";
 import { type Message } from "@/hooks/useMessages";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Languages } from "lucide-react";
+import { LanguageSelector } from "@/components/LanguageSelector";
 
 interface MessageListProps {
   messages: Message[];
@@ -25,6 +25,7 @@ export const MessageList = ({
   onTranslateAll
 }: MessageListProps) => {
   const [showSearch, setShowSearch] = useState(false);
+  const [displayLanguage, setDisplayLanguage] = useState("en");
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const handleScroll = (e: any) => {
@@ -45,7 +46,7 @@ export const MessageList = ({
             exit={{ opacity: 0, y: -20 }}
             className="absolute top-0 left-0 right-0 z-10 p-2 bg-white/80 backdrop-blur-sm border-b"
           >
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center gap-2">
               <input
                 type="search"
                 placeholder="Search messages..."
@@ -53,15 +54,11 @@ export const MessageList = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <Button
-                variant="outline"
-                size="sm"
-                className="ml-2"
-                onClick={onTranslateAll}
-              >
-                <Languages className="h-4 w-4 mr-1" />
-                Translate All
-              </Button>
+              <LanguageSelector
+                value={displayLanguage}
+                onChange={setDisplayLanguage}
+                label=""
+              />
             </div>
           </motion.div>
         )}
