@@ -12,19 +12,15 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 interface ChatSettingsProps {
   outgoingLanguage: string;
   incomingLanguage: string;
-  apiKey: string;
   setOutgoingLanguage: (lang: string) => void;
   setIncomingLanguage: (lang: string) => void;
-  setApiKey: (key: string) => void;
 }
 
 export const ChatSettings = ({
   outgoingLanguage,
   incomingLanguage,
-  apiKey,
   setOutgoingLanguage,
   setIncomingLanguage,
-  setApiKey,
 }: ChatSettingsProps) => {
   return (
     <Sheet>
@@ -48,18 +44,6 @@ export const ChatSettings = ({
             onChange={setIncomingLanguage}
             label="Translate incoming messages to"
           />
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              OpenAI API Key
-            </label>
-            <input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="Enter your OpenAI API key"
-              className="w-full p-2 border rounded-md"
-            />
-          </div>
         </div>
       </SheetContent>
     </Sheet>
