@@ -39,7 +39,7 @@ export const useMessages = (recipientId: string) => {
           originalText: msg.translated_content ? msg.content : undefined,
           isOutgoing: msg.sender_id === user.id,
           timestamp: new Date(msg.created_at).toLocaleTimeString(),
-          senderId: msg.sender_id  // Added this line
+          senderId: msg.sender_id
         }));
 
         setMessages(formattedMessages);
@@ -77,7 +77,7 @@ export const useMessages = (recipientId: string) => {
               originalText: newMessage.translated_content ? newMessage.content : undefined,
               isOutgoing: newMessage.sender_id === user.id,
               timestamp: new Date(newMessage.created_at).toLocaleTimeString(),
-              senderId: newMessage.sender_id  // Added this line
+              senderId: newMessage.sender_id
             }]);
           }
         }
@@ -107,8 +107,20 @@ export const useMessages = (recipientId: string) => {
     setMessages(prev => [...prev, newMessage]);
 
     try {
+      // Get recipient's preferred language
+      const { data: recipientPrefs, error: prefsError } = await supabase
+        .from('user_preferences')
+        .select('preferred_language')
+        .eq('user_id', recipientId)
+        .single();
+
+      if (prefsError) throw prefsError;
+
+      const targetLanguage = recipientPrefs?.preferred_language || 'en';
+
+      // Translate the message
       const { data: translatedMessage, error } = await supabase.functions.invoke('translate-message', {
-        body: { text, sourceLanguage: outgoingLanguage, targetLanguage: incomingLanguage }
+        body: { text, sourceLanguage: outgoingLanguage, targetLanguage }
       });
 
       if (error) throw error;
@@ -133,7 +145,7 @@ export const useMessages = (recipientId: string) => {
           content: text,
           translated_content: translatedMessage.translatedText,
           source_language: outgoingLanguage,
-          target_language: incomingLanguage,
+          target_language: targetLanguage,
           sender_id: user.user.id,
           recipient_id: recipientId
         }])
