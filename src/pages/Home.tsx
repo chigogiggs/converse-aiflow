@@ -66,11 +66,15 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       <Navigation />
-      <div className="container mx-auto px-4 py-8 space-y-8">
-        <UserProfileCard user={currentUser} />
-        <QuickActions />
-        <HomeContent userId={currentUser.id} />
-      </div>
+      <main className="container mx-auto px-4 py-8 space-y-8 animate-fade-in">
+        <div className="grid gap-8 md:grid-cols-[1fr_2fr] lg:grid-cols-[1fr_3fr]">
+          <aside className="space-y-6">
+            <UserProfileCard user={currentUser} />
+            <QuickActions />
+          </aside>
+          <HomeContent userId={currentUser.id} />
+        </div>
+      </main>
     </div>
   );
 };
