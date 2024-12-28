@@ -6,7 +6,7 @@ const Connections = () => {
   const navigate = useNavigate();
 
   const handleSelectConnection = (connectionId: string) => {
-    navigate(`/chat?recipient=${connectionId}`);
+    navigate(`/chat/${connectionId}`);
   };
 
   return (
