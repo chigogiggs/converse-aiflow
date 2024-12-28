@@ -36,7 +36,6 @@ export const MessageList = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Mark all messages from this recipient as read
       await supabase
         .from('messages')
         .update({ read: true })
@@ -57,20 +56,20 @@ export const MessageList = ({
   };
 
   return (
-    <div className="relative flex-1 mt-20">
+    <div className="relative flex-1 mt-20 bg-gray-900">
       <AnimatePresence>
         {showSearch && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="absolute top-0 left-0 right-0 z-10 p-2 bg-white/80 backdrop-blur-sm border-b"
+            className="absolute top-0 left-0 right-0 z-10 p-2 bg-gray-800/80 backdrop-blur-sm border-b border-gray-700"
           >
             <div className="flex justify-between items-center gap-2">
               <input
                 type="search"
                 placeholder="Search messages..."
-                className="w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 rounded-lg bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -85,34 +84,68 @@ export const MessageList = ({
       </AnimatePresence>
       
       <ScrollArea 
-        className="h-full p-4" 
+        className="h-full p-4 bg-gray-900" 
         onScrollCapture={handleScroll}
         ref={scrollRef}
       >
-        <div className="space-y-4">
-          {messages
-            .filter(message =>
-              message.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              (message.originalText?.toLowerCase().includes(searchQuery.toLowerCase()))
-            )
-            .map((message) => (
-              <div key={message.id} className="group relative">
-                <ChatMessage
-                  message={message.text}
-                  isOutgoing={message.isOutgoing}
-                  timestamp={message.timestamp}
-                  isTranslating={message.isTranslating}
-                  originalText={message.originalText}
-                />
-              </div>
-            ))}
+        <motion.div 
+          className="space-y-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <AnimatePresence mode="popLayout">
+            {messages
+              .filter(message =>
+                message.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (message.originalText?.toLowerCase().includes(searchQuery.toLowerCase()))
+              )
+              .map((message, index) => (
+                <motion.div
+                  key={message.id}
+                  initial={{ 
+                    opacity: 0, 
+                    x: message.isOutgoing ? 20 : -20,
+                    scale: 0.9 
+                  }}
+                  animate={{ 
+                    opacity: 1, 
+                    x: 0,
+                    scale: 1 
+                  }}
+                  exit={{ 
+                    opacity: 0, 
+                    scale: 0.9,
+                    transition: { duration: 0.2 } 
+                  }}
+                  transition={{ 
+                    duration: 0.3,
+                    delay: index * 0.1 
+                  }}
+                  className="group relative"
+                >
+                  <ChatMessage
+                    message={message.text}
+                    isOutgoing={message.isOutgoing}
+                    timestamp={message.timestamp}
+                    isTranslating={message.isTranslating}
+                    originalText={message.originalText}
+                  />
+                </motion.div>
+              ))}
+          </AnimatePresence>
           {isTyping && (
-            <div className="text-sm text-gray-500 italic flex items-center gap-2">
-              <Smile className="h-4 w-4 animate-bounce" />
-              Typing in {outgoingLanguage}...
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="text-sm text-gray-400 italic flex items-center gap-2 p-2 bg-gray-800 rounded-lg"
+            >
+              <Smile className="h-4 w-4 animate-bounce text-indigo-400" />
+              <span>Typing in {outgoingLanguage}...</span>
+            </motion.div>
           )}
-        </div>
+        </motion.div>
       </ScrollArea>
     </div>
   );

@@ -16,8 +16,8 @@ export const ChatContainer = () => {
   
   if (!recipientId) {
     return (
-      <div className="flex flex-col items-center justify-center h-full p-4">
-        <Alert variant="destructive" className="max-w-md mb-4">
+      <div className="flex flex-col items-center justify-center h-full p-4 bg-gray-900 text-gray-100">
+        <Alert variant="destructive" className="max-w-md mb-4 bg-red-900/50 border-red-800">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>No recipient selected</AlertTitle>
           <AlertDescription>
@@ -25,7 +25,7 @@ export const ChatContainer = () => {
           </AlertDescription>
         </Alert>
         <Link to="/connections">
-          <Button variant="default">
+          <Button variant="default" className="bg-indigo-600 hover:bg-indigo-700">
             Go to Connections
           </Button>
         </Link>
@@ -55,7 +55,7 @@ export const ChatContainer = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-gray-900 text-gray-100">
       <div className="flex-1 overflow-hidden">
         <PinnedMessages messages={messages} pinnedMessages={pinnedMessages} />
 
@@ -70,7 +70,7 @@ export const ChatContainer = () => {
         />
       </div>
 
-      <div className="sticky bottom-0 border-t bg-white">
+      <div className="sticky bottom-0 border-t border-gray-800 bg-gray-900 p-4">
         <ChatInput 
           onSendMessage={handleSendMessage} 
           onTyping={handleTyping}

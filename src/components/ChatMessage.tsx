@@ -42,14 +42,15 @@ export const ChatMessage = ({
             <TooltipTrigger asChild>
               <motion.div
                 className={cn(
-                  "relative p-3 rounded-lg cursor-pointer group",
+                  "relative p-3 rounded-lg cursor-pointer group backdrop-blur-sm",
                   isOutgoing
-                    ? "bg-indigo-600 text-white rounded-br-none"
-                    : "bg-gray-100 text-gray-800 rounded-bl-none"
+                    ? "bg-indigo-600/90 text-white rounded-br-none shadow-lg shadow-indigo-500/20"
+                    : "bg-gray-800/90 text-gray-100 rounded-bl-none shadow-lg shadow-gray-900/20"
                 )}
                 onClick={toggleOriginal}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
+                layout
               >
                 <AnimatePresence mode="wait">
                   <motion.p
@@ -66,26 +67,32 @@ export const ChatMessage = ({
                 {originalText && (
                   <Languages 
                     className={cn(
-                      "h-4 w-4 absolute -right-5 top-1/2 -translate-y-1/2 transition-opacity",
+                      "h-4 w-4 absolute -right-5 top-1/2 -translate-y-1/2 transition-all duration-300",
                       isMobile ? "opacity-50" : "opacity-0 group-hover:opacity-50",
-                      isOutgoing ? "text-indigo-600" : "text-gray-500"
+                      isOutgoing ? "text-indigo-400" : "text-gray-400"
                     )}
                   />
                 )}
                 {originalText && isMobile && (
-                  <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-1 h-8 rounded-full bg-indigo-400 opacity-30" />
+                  <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-1 h-8 rounded-full bg-indigo-400/30" />
                 )}
                 {isTranslating && (
-                  <span className="text-xs opacity-70">Translating...</span>
+                  <motion.span 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-xs opacity-70"
+                  >
+                    Translating...
+                  </motion.span>
                 )}
               </motion.div>
             </TooltipTrigger>
-            <TooltipContent>
+            <TooltipContent className="bg-gray-800 text-gray-100 border-gray-700">
               <p>{isMobile ? "Tap" : "Click"} to see original message</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-        <span className="text-xs text-gray-500 leading-none">{timestamp}</span>
+        <span className="text-xs text-gray-500 leading-none mt-1 block">{timestamp}</span>
       </div>
     </div>
   );
