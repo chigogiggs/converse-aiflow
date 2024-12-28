@@ -27,14 +27,14 @@ export const Navigation = () => {
   });
 
   return (
-    <nav className="h-16 sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/40">
+    <nav className="h-16 sticky top-0 z-50 w-full bg-[#1A1F2C]/95 backdrop-blur supports-[backdrop-filter]:bg-[#1A1F2C]/60 border-b border-[#7E69AB]/20">
       <div className="container mx-auto h-full flex justify-between items-center px-6">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => navigate(-1)}
-            className="mr-2 text-foreground hover:bg-accent hover:text-accent-foreground"
+            className="mr-2 text-[#C8C8C9] hover:bg-[#403E43] hover:text-[#7E69AB]"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -47,8 +47,8 @@ export const Navigation = () => {
                 size="lg"
               />
               <div className="animate-fade-in">
-                <h2 className="text-xl font-semibold text-foreground">{recipientProfile?.display_name}</h2>
-                <p className="text-sm text-muted-foreground">Online</p>
+                <h2 className="text-xl font-semibold text-[#C8C8C9]">{recipientProfile?.display_name}</h2>
+                <p className="text-sm text-[#8A898C]">Online</p>
               </div>
             </>
           ) : (
@@ -56,7 +56,7 @@ export const Navigation = () => {
               variant="ghost"
               size="icon"
               onClick={() => navigate("/connections")}
-              className="hidden sm:flex text-foreground hover:bg-accent hover:text-accent-foreground"
+              className="hidden sm:flex text-[#C8C8C9] hover:bg-[#403E43] hover:text-[#7E69AB]"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
