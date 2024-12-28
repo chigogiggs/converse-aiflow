@@ -1,7 +1,8 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatMessage } from "@/components/ChatMessage";
 import { Smile, Languages } from "lucide-react";
-import { type Message } from "@/hooks/useMessages";
+import { Message } from "@/types/message.types";
+import { useMessages } from "@/hooks/useMessages";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
