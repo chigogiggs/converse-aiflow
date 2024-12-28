@@ -83,6 +83,22 @@ export const ChatContainer = () => {
 
       if (error) throw error;
 
+      // Save message to database
+      const { data: savedMessage, error: saveError } = await supabase
+        .from('messages')
+        .insert([{
+          content: text,
+          translated_content: translatedMessage.translatedText,
+          source_language: outgoingLanguage,
+          target_language: incomingLanguage,
+          sender_id: (await supabase.auth.getUser()).data.user?.id,
+          recipient_id: "recipient_id_here" // Replace with actual recipient ID
+        }])
+        .select()
+        .single();
+
+      if (saveError) throw saveError;
+
       setMessages(prev => prev.map(msg => 
         msg.id === newMessage.id 
           ? { 
@@ -104,6 +120,9 @@ export const ChatContainer = () => {
         description: error.message,
         variant: "destructive",
       });
+
+      // Remove the message if translation failed
+      setMessages(prev => prev.filter(msg => msg.id !== newMessage.id));
     }
   };
 
@@ -152,17 +171,22 @@ export const ChatContainer = () => {
 
       <ScrollArea className="flex-1 p-4" ref={scrollRef}>
         <div className="space-y-4">
-          {filteredMessages.map((message) => (
-            <div key={message.id} className="group relative">
-              <ChatMessage
-                message={showOriginal && message.originalText ? message.originalText : message.text}
-                isOutgoing={message.isOutgoing}
-                timestamp={message.timestamp}
-                isTranslating={message.isTranslating}
-                originalText={message.originalText}
-              />
-            </div>
-          ))}
+          {messages
+            .filter(message =>
+              message.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              (message.originalText?.toLowerCase().includes(searchQuery.toLowerCase()))
+            )
+            .map((message) => (
+              <div key={message.id} className="group relative">
+                <ChatMessage
+                  message={showOriginal && message.originalText ? message.originalText : message.text}
+                  isOutgoing={message.isOutgoing}
+                  timestamp={message.timestamp}
+                  isTranslating={message.isTranslating}
+                  originalText={message.originalText}
+                />
+              </div>
+            ))}
           {isTyping && (
             <div className="text-sm text-gray-500 italic flex items-center gap-2">
               <Smile className="h-4 w-4 animate-bounce" />

@@ -13,28 +13,13 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
+    const { text, sourceLanguage, targetLanguage } = await req.json();
+    
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
       throw new Error('OpenAI API key not configured');
     }
 
-    const { messageId } = await req.json();
-
-    // Fetch the message
-    const { data: message, error: fetchError } = await supabase
-      .from('messages')
-      .select('*')
-      .eq('id', messageId)
-      .single();
-
-    if (fetchError) throw fetchError;
-
-    // Translate using OpenAI
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -46,11 +31,11 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a professional translator. Translate the following text from ${message.source_language} to ${message.target_language}. Only respond with the translation, nothing else.`
+            content: `You are a professional translator. Translate the following text from ${sourceLanguage} to ${targetLanguage}. Only respond with the translation, nothing else.`
           },
           {
             role: 'user',
-            content: message.content
+            content: text
           }
         ],
         temperature: 0.3,
@@ -61,16 +46,8 @@ serve(async (req) => {
     const data = await response.json();
     const translatedText = data.choices[0].message.content;
 
-    // Update the message with the translation
-    const { error: updateError } = await supabase
-      .from('messages')
-      .update({ translated_content: translatedText })
-      .eq('id', messageId);
-
-    if (updateError) throw updateError;
-
     return new Response(
-      JSON.stringify({ success: true, translatedText }),
+      JSON.stringify({ translatedText }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
