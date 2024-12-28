@@ -1,7 +1,6 @@
 import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ChatInput } from "@/components/ChatInput";
-import { ChatHeader } from "@/components/ChatHeader";
 import { ChatSettings } from "./ChatSettings";
 import { PinnedMessages } from "./PinnedMessages";
 import { MessageList } from "./MessageList";
@@ -57,10 +56,6 @@ export const ChatContainer = () => {
 
   return (
     <div className="flex flex-col h-full bg-white">
-      <div className="sticky top-16 z-10">
-        <ChatHeader recipientId={recipientId} />
-      </div>
-      
       <div className="flex-1 overflow-hidden">
         <PinnedMessages messages={messages} pinnedMessages={pinnedMessages} />
 
