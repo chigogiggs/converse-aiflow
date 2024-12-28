@@ -26,7 +26,7 @@ export const useMessages = (recipientId: string) => {
     const fetchMessages = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user || !recipientId) return;
 
         const { data, error } = await supabase
           .from('messages')
@@ -57,44 +57,46 @@ export const useMessages = (recipientId: string) => {
       }
     };
 
-    fetchMessages();
+    if (recipientId) {
+      fetchMessages();
 
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-    }
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+      }
 
-    const channel = supabase
-      .channel('messages')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'messages',
-          filter: `recipient_id=eq.${recipientId}`,
-        },
-        async (payload) => {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (!user) return;
+      const channel = supabase
+        .channel('messages')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'messages',
+            filter: `recipient_id=eq.${recipientId}`,
+          },
+          async (payload) => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
 
-          if (payload.eventType === 'INSERT') {
-            const newMessage = payload.new;
-            if (newMessage.sender_id !== user.id) {
-              setMessages(prev => [...prev, {
-                id: newMessage.id,
-                text: newMessage.translated_content || newMessage.content,
-                originalText: newMessage.translated_content ? newMessage.content : undefined,
-                isOutgoing: newMessage.sender_id === user.id,
-                timestamp: new Date(newMessage.created_at).toLocaleTimeString(),
-                senderId: newMessage.sender_id
-              }]);
+            if (payload.eventType === 'INSERT') {
+              const newMessage = payload.new;
+              if (newMessage.sender_id !== user.id) {
+                setMessages(prev => [...prev, {
+                  id: newMessage.id,
+                  text: newMessage.translated_content || newMessage.content,
+                  originalText: newMessage.translated_content ? newMessage.content : undefined,
+                  isOutgoing: newMessage.sender_id === user.id,
+                  timestamp: new Date(newMessage.created_at).toLocaleTimeString(),
+                  senderId: newMessage.sender_id
+                }]);
+              }
             }
           }
-        }
-      )
-      .subscribe();
+        )
+        .subscribe();
 
-    channelRef.current = channel;
+      channelRef.current = channel;
+    }
 
     return () => {
       if (channelRef.current) {
@@ -104,7 +106,7 @@ export const useMessages = (recipientId: string) => {
   }, [recipientId, toast]);
 
   const sendMessage = async (text: string) => {
-    if (!text.trim()) return;
+    if (!text.trim() || !recipientId) return;
 
     const newMessage: Message = {
       id: Date.now().toString(),
