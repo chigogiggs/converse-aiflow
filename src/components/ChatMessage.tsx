@@ -27,23 +27,41 @@ export const ChatMessage = ({
   const [showOriginal, setShowOriginal] = useState(false);
   const isMobile = useIsMobile();
   const [senderProfile, setSenderProfile] = useState<any>(null);
+  const [currentUserProfile, setCurrentUserProfile] = useState<any>(null);
 
   useEffect(() => {
-    const fetchSenderProfile = async () => {
-      if (!senderId || isOutgoing) return;
-      
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', senderId)
-        .single();
-      
-      if (profile) {
-        setSenderProfile(profile);
+    const fetchProfiles = async () => {
+      // Fetch sender's profile if it's an incoming message
+      if (senderId && !isOutgoing) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', senderId)
+          .single();
+        
+        if (profile) {
+          setSenderProfile(profile);
+        }
+      }
+
+      // Fetch current user's profile for outgoing messages
+      if (isOutgoing) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+          
+          if (profile) {
+            setCurrentUserProfile(profile);
+          }
+        }
       }
     };
 
-    fetchSenderProfile();
+    fetchProfiles();
   }, [senderId, isOutgoing]);
 
   const toggleOriginal = () => {
@@ -56,19 +74,17 @@ export const ChatMessage = ({
     <div
       className={cn(
         "flex w-full mt-2 space-x-3 max-w-md group",
-        isOutgoing ? "ml-auto justify-end" : "justify-start"
+        isOutgoing ? "ml-auto flex-row-reverse" : ""
       )}
     >
-      {!isOutgoing && senderId && (
-        <div className="flex-shrink-0">
-          <UserAvatar
-            src={senderProfile?.avatar_url}
-            fallback={senderProfile?.display_name?.[0] || "?"}
-            size="sm"
-          />
-        </div>
-      )}
-      <div>
+      <div className="flex-shrink-0">
+        <UserAvatar
+          src={isOutgoing ? currentUserProfile?.avatar_url : senderProfile?.avatar_url}
+          fallback={(isOutgoing ? currentUserProfile?.display_name : senderProfile?.display_name)?.[0] || "?"}
+          size="sm"
+        />
+      </div>
+      <div className={cn("flex flex-col", isOutgoing ? "items-end" : "items-start")}>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -99,14 +115,17 @@ export const ChatMessage = ({
                 {originalText && (
                   <Languages 
                     className={cn(
-                      "h-4 w-4 absolute -right-5 top-1/2 -translate-y-1/2 transition-all duration-300",
+                      "h-4 w-4 absolute top-1/2 -translate-y-1/2 transition-all duration-300",
                       isMobile ? "opacity-50" : "opacity-0 group-hover:opacity-50",
-                      isOutgoing ? "text-primary/60" : "text-secondary/60"
+                      isOutgoing ? "-left-5 text-primary/60" : "-right-5 text-secondary/60"
                     )}
                   />
                 )}
                 {originalText && isMobile && (
-                  <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-1 h-8 rounded-full bg-primary/30" />
+                  <div className={cn(
+                    "absolute top-1/2 -translate-y-1/2 w-1 h-8 rounded-full",
+                    isOutgoing ? "-left-2 bg-primary/30" : "-right-2 bg-secondary/30"
+                  )} />
                 )}
                 {isTranslating && (
                   <motion.span 
@@ -124,7 +143,12 @@ export const ChatMessage = ({
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-        <span className="text-xs text-white/70 leading-none mt-1 block">{timestamp}</span>
+        <span className={cn(
+          "text-xs text-white/70 leading-none mt-1 block",
+          isOutgoing ? "text-right" : "text-left"
+        )}>
+          {timestamp}
+        </span>
       </div>
     </div>
   );
