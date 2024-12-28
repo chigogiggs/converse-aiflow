@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect, useRef } from "react";
 import { Mic, Send, Image as ImageIcon } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -19,12 +20,23 @@ export const ChatInput = ({
   const [message, setMessage] = useState("");
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isMobile = useIsMobile();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim()) {
       onSendMessage(message);
       setMessage("");
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (message.trim()) {
+        onSendMessage(message);
+        setMessage("");
+      }
     }
   };
 
@@ -94,8 +106,10 @@ export const ChatInput = ({
       <Textarea
         value={message}
         onChange={handleChange}
+        onKeyDown={handleKeyPress}
         placeholder="Type your message..."
         className="flex-1 min-h-[50px] max-h-[150px] resize-none focus-visible:ring-1 focus-visible:ring-indigo-500 border-gray-200"
+        enterKeyHint={isMobile ? "enter" : "send"}
       />
       <Button 
         type="submit" 

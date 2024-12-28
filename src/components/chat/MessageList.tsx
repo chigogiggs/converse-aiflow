@@ -130,6 +130,7 @@ export const MessageList = ({
                     timestamp={message.timestamp}
                     isTranslating={message.isTranslating}
                     originalText={message.originalText}
+                    senderId={message.isOutgoing ? undefined : message.senderId}
                   />
                 </motion.div>
               ))}

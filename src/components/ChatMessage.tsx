@@ -1,9 +1,11 @@
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Languages } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { UserAvatar } from "./UserAvatar";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ChatMessageProps {
   message: string;
@@ -11,6 +13,7 @@ interface ChatMessageProps {
   timestamp: string;
   isTranslating?: boolean;
   originalText?: string;
+  senderId?: string;
 }
 
 export const ChatMessage = ({ 
@@ -18,10 +21,30 @@ export const ChatMessage = ({
   isOutgoing, 
   timestamp, 
   isTranslating,
-  originalText
+  originalText,
+  senderId
 }: ChatMessageProps) => {
   const [showOriginal, setShowOriginal] = useState(false);
   const isMobile = useIsMobile();
+  const [senderProfile, setSenderProfile] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchSenderProfile = async () => {
+      if (!senderId || isOutgoing) return;
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', senderId)
+        .single();
+      
+      if (profile) {
+        setSenderProfile(profile);
+      }
+    };
+
+    fetchSenderProfile();
+  }, [senderId, isOutgoing]);
 
   const toggleOriginal = () => {
     if (originalText) {
@@ -36,6 +59,15 @@ export const ChatMessage = ({
         isOutgoing ? "ml-auto justify-end" : "justify-start"
       )}
     >
+      {!isOutgoing && senderId && (
+        <div className="flex-shrink-0">
+          <UserAvatar
+            src={senderProfile?.avatar_url}
+            fallback={senderProfile?.display_name?.[0] || "?"}
+            size="sm"
+          />
+        </div>
+      )}
       <div>
         <TooltipProvider>
           <Tooltip>
