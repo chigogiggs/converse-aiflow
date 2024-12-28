@@ -1,74 +1,42 @@
-import { Connection } from "@/integrations/supabase/types/tables";
-import { ScrollArea } from "../ui/scroll-area";
+import { useConnections } from "@/hooks/useConnections";
 import { ConnectionItem } from "../ConnectionItem";
-import { Button } from "../ui/button";
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
-import { FullConnectionsList } from "./FullConnectionsList";
-import { Users } from "lucide-react";
+import { Skeleton } from "../ui/skeleton";
+import { Profile } from "@/integrations/supabase/types/tables";
 
-interface ConnectionsTabProps {
-  connections: Connection[];
-  onSelectConnection: (connectionId: string) => void;
-}
+export const ConnectionsTab = () => {
+  const { data: connections, isLoading } = useConnections();
 
-export const ConnectionsTab = ({ connections, onSelectConnection }: ConnectionsTabProps) => {
-  const [showAllConnections, setShowAllConnections] = useState(false);
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <Skeleton key={i} className="h-16 w-full" />
+        ))}
+      </div>
+    );
+  }
 
-  // Sort connections by last message date (most recent first)
-  const sortedConnections = [...connections].sort((a, b) => {
-    return new Date(b.updated_at || '').getTime() - new Date(a.updated_at || '').getTime();
-  });
-
-  // Take only the first 5 connections for the preview
-  const recentConnections = sortedConnections.slice(0, 5);
+  if (!connections?.length) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        <p>No connections yet</p>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <ScrollArea className="h-[calc(100vh-20rem)]">
-        <div className="space-y-4 p-4">
-          {recentConnections.map((connection) => (
-            <ConnectionItem 
-              key={connection.id} 
-              connection={connection} 
-              onSelect={onSelectConnection}
-            />
-          ))}
-          {connections.length === 0 && (
-            <p className="text-center text-muted-foreground py-4">
-              No connections yet
-            </p>
-          )}
-        </div>
-      </ScrollArea>
-      
-      {connections.length > 5 && (
-        <div className="p-4">
-          <Button 
-            variant="outline" 
-            className="w-full"
-            onClick={() => setShowAllConnections(true)}
-          >
-            <Users className="h-4 w-4 mr-2" />
-            View All Connections ({connections.length})
-          </Button>
-        </div>
-      )}
-
-      <Dialog open={showAllConnections} onOpenChange={setShowAllConnections}>
-        <DialogContent className="max-w-2xl h-[80vh]">
-          <DialogHeader>
-            <DialogTitle>All Connections</DialogTitle>
-          </DialogHeader>
-          <FullConnectionsList 
-            connections={connections}
-            onSelectConnection={(id) => {
-              onSelectConnection(id);
-              setShowAllConnections(false);
-            }}
+    <div className="space-y-4">
+      {connections.map((connection) => {
+        const connectionProfile = connection.recipient || connection.profiles;
+        return (
+          <ConnectionItem
+            key={connection.id}
+            id={connectionProfile?.id || ''}
+            display_name={connectionProfile?.display_name || ''}
+            avatar_url={connectionProfile?.avatar_url}
           />
-        </DialogContent>
-      </Dialog>
-    </>
+        );
+      })}
+    </div>
   );
 };
