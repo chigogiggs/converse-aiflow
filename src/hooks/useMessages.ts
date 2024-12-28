@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -16,6 +16,77 @@ export interface Message {
 export const useMessages = (recipientId: string) => {
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
+
+  // Fetch initial messages
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await supabase
+          .from('messages')
+          .select('*')
+          .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
+          .or(`sender_id.eq.${recipientId},recipient_id.eq.${recipientId}`)
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+
+        const formattedMessages = data.map(msg => ({
+          id: msg.id,
+          text: msg.translated_content || msg.content,
+          originalText: msg.translated_content ? msg.content : undefined,
+          isOutgoing: msg.sender_id === user.id,
+          timestamp: new Date(msg.created_at).toLocaleTimeString(),
+        }));
+
+        setMessages(formattedMessages);
+      } catch (error: any) {
+        console.error('Error fetching messages:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load messages",
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchMessages();
+
+    // Subscribe to new messages
+    const channel = supabase
+      .channel('messages')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+          filter: `recipient_id=eq.${recipientId}`,
+        },
+        async (payload) => {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+
+          if (payload.eventType === 'INSERT') {
+            const newMessage = payload.new;
+            setMessages(prev => [...prev, {
+              id: newMessage.id,
+              text: newMessage.translated_content || newMessage.content,
+              originalText: newMessage.translated_content ? newMessage.content : undefined,
+              isOutgoing: newMessage.sender_id === user.id,
+              timestamp: new Date(newMessage.created_at).toLocaleTimeString(),
+            }]);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [recipientId, toast]);
 
   const sendMessage = async (
     text: string,
