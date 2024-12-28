@@ -1,15 +1,13 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2, Users, MessageSquare, Settings } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { UserSearch } from "@/components/UserSearch";
-import { ConnectionsList } from "@/components/ConnectionsList";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { UserAvatar } from "@/components/UserAvatar";
-import { Button } from "@/components/ui/button";
 import { Navigation } from "@/components/Navigation";
 import { toast } from "@/hooks/use-toast";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { UserProfileCard } from "@/components/home/UserProfileCard";
+import { QuickActions } from "@/components/home/QuickActions";
+import { HomeContent } from "@/components/home/HomeContent";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -65,83 +63,13 @@ const Home = () => {
     );
   }
 
-  const handleSelectConnection = (connectionId: string) => {
-    navigate(`/chat?recipient=${connectionId}`);
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       <Navigation />
       <div className="container mx-auto px-4 py-8 space-y-8">
-        <Card className="w-full max-w-2xl mx-auto bg-card/50 backdrop-blur-sm">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div className="flex items-center gap-4">
-              <UserAvatar
-                src={currentUser.profile?.avatar_url || "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b"}
-                fallback={currentUser.profile?.display_name?.[0] || "?"}
-                size="lg"
-                userId={currentUser.id}
-                editable={true}
-              />
-              <div>
-                <CardTitle className="text-2xl font-bold">
-                  {currentUser.profile?.display_name !== "New User" ? currentUser.profile?.display_name : ""}
-                </CardTitle>
-                <p className="text-muted-foreground">
-                  {currentUser.email}
-                </p>
-              </div>
-            </div>
-            <Button variant="outline" onClick={() => navigate("/settings")}>
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4 mt-4">
-              <div className="flex items-center gap-2 p-4 bg-primary/5 rounded-lg">
-                <Users className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="text-sm font-medium">Connections</p>
-                  <p className="text-2xl font-bold">0</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 p-4 bg-primary/5 rounded-lg">
-                <MessageSquare className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="text-sm font-medium">Messages</p>
-                  <p className="text-2xl font-bold">0</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-          <Button
-            className="h-auto py-4 px-6"
-            onClick={() => navigate("/chat")}
-          >
-            <MessageSquare className="h-5 w-5 mr-2" />
-            Start a New Chat
-          </Button>
-          <Button
-            variant="outline"
-            className="h-auto py-4 px-6"
-            onClick={() => navigate("/connections")}
-          >
-            <Users className="h-5 w-5 mr-2" />
-            View All Connections
-          </Button>
-        </div>
-
-        <div className="animate-fade-in">
-          <UserSearch currentUserId={currentUser.id} />
-        </div>
-
-        <div className="animate-fade-in" style={{ animationDelay: "0.2s" }}>
-          <ConnectionsList onSelectConnection={handleSelectConnection} />
-        </div>
+        <UserProfileCard user={currentUser} />
+        <QuickActions />
+        <HomeContent userId={currentUser.id} />
       </div>
     </div>
   );
