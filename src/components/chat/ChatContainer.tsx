@@ -56,22 +56,24 @@ export const ChatContainer = () => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-theme(spacing.16))] md:h-[calc(100vh-theme(spacing.32))] bg-white rounded-lg shadow-lg overflow-hidden">
+    <div className="flex flex-col h-screen max-h-screen bg-white">
       <ChatHeader recipientId={recipientId} />
       
-      <PinnedMessages messages={messages} pinnedMessages={pinnedMessages} />
+      <div className="flex-1 overflow-hidden pt-16">
+        <PinnedMessages messages={messages} pinnedMessages={pinnedMessages} />
 
-      <MessageList
-        messages={messages}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        isTyping={isTyping}
-        outgoingLanguage={outgoingLanguage}
-        onTranslateAll={handleTranslateAll}
-        recipientId={recipientId}
-      />
+        <MessageList
+          messages={messages}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          isTyping={isTyping}
+          outgoingLanguage={outgoingLanguage}
+          onTranslateAll={handleTranslateAll}
+          recipientId={recipientId}
+        />
+      </div>
 
-      <div className="mt-auto border-t">
+      <div className="mt-auto border-t sticky bottom-0 bg-white">
         <ChatInput 
           onSendMessage={handleSendMessage} 
           onTyping={handleTyping}
