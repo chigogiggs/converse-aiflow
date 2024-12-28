@@ -20,6 +20,32 @@ export const SignupForm = () => {
   const [avatarUrl, setAvatarUrl] = useState("");
   const navigate = useNavigate();
 
+  const slides = [
+    <EmailPasswordSlide
+      key="email-password"
+      email={email}
+      password={password}
+      onEmailChange={setEmail}
+      onPasswordChange={setPassword}
+    />,
+    <UsernameSlide
+      key="username"
+      username={username}
+      onUsernameChange={setUsername}
+    />,
+    <ProfilePictureSlide
+      key="profile-picture"
+      avatarUrl={avatarUrl}
+      username={username}
+      onAvatarChange={setAvatarUrl}
+    />,
+    <LanguageSlide
+      key="language"
+      language={language}
+      onLanguageChange={setLanguage}
+    />
+  ];
+
   const handleSignup = async () => {
     try {
       // First check if username exists

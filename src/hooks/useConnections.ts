@@ -38,7 +38,13 @@ export const useConnections = () => {
       if (recipientError) throw recipientError;
 
       // Combine both sets of accepted connections
-      const allConnections = [...(requesterConnections || []), ...(recipientConnections || [])];
+      const allConnections = [
+        ...(requesterConnections || []).map(conn => ({
+          ...conn,
+          profiles: conn.recipient
+        })),
+        ...(recipientConnections || [])
+      ] as Connection[];
 
       // Fetch pending received requests
       const { data: receivedData, error: receivedError } = await supabase
@@ -64,7 +70,7 @@ export const useConnections = () => {
 
       if (sentError) throw sentError;
 
-      setConnections(allConnections as Connection[] || []);
+      setConnections(allConnections);
       setPendingReceived(receivedData as Connection[] || []);
       setPendingSent(sentData as Connection[] || []);
     } catch (error: any) {
