@@ -15,7 +15,7 @@ export const translateMessage = async (
 
   // If no preferences exist, create default preferences
   if (!recipientPrefs) {
-    const { error: createError } = await supabase
+    const { data: newPrefs, error: createError } = await supabase
       .from('user_preferences')
       .insert([
         { 
@@ -27,6 +27,11 @@ export const translateMessage = async (
       .maybeSingle();
 
     if (createError) throw createError;
+    
+    // Use the newly created preferences
+    if (newPrefs) {
+      recipientPrefs = newPrefs;
+    }
   }
 
   // Use either existing preference or default to English
