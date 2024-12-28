@@ -29,12 +29,17 @@ export const MessageContent = ({
     >
       <AnimatePresence mode="popLayout">
         {messages.map((message, index) => {
+          // For outgoing messages, show translated text as main display
+          // For incoming messages, show original text as main display
           const displayText = message.isOutgoing 
-            ? message.text 
+            ? message.translations?.[outgoingLanguage] || message.text
             : message.text;
+          
+          // For outgoing messages, original is the untranslated text
+          // For incoming messages, original is the translated version in user's language
           const originalText = message.isOutgoing 
-            ? message.translations?.[outgoingLanguage] 
-            : message.text;
+            ? message.text 
+            : message.translations?.[outgoingLanguage];
 
           return (
             <motion.div
