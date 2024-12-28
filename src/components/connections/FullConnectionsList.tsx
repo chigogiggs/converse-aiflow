@@ -1,8 +1,19 @@
 import { useConnections } from "@/hooks/useConnections";
 import { ConnectionItem } from "../ConnectionItem";
+import { Skeleton } from "../ui/skeleton";
 
 export const FullConnectionsList = () => {
   const { connections, isLoading } = useConnections();
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <Skeleton key={i} className="h-16 w-full" />
+        ))}
+      </div>
+    );
+  }
 
   if (!connections?.length) {
     return (

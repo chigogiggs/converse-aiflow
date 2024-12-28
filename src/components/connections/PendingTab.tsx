@@ -7,13 +7,15 @@ interface PendingTabProps {
   onAccept?: (connectionId: string) => void;
   onReject?: (connectionId: string) => void;
   showActions?: boolean;
+  type?: 'sent' | 'received';
 }
 
 export const PendingTab = ({ 
   connections, 
   onAccept, 
   onReject, 
-  showActions = false 
+  showActions = false,
+  type = 'received'
 }: PendingTabProps) => {
   return (
     <ScrollArea className="h-[calc(100vh-16rem)]">
@@ -29,7 +31,7 @@ export const PendingTab = ({
         ))}
         {connections.length === 0 && (
           <p className="text-center text-muted-foreground py-4">
-            No pending requests {showActions ? 'received' : 'sent'}
+            No pending requests {type === 'sent' ? 'sent' : 'received'}
           </p>
         )}
       </div>

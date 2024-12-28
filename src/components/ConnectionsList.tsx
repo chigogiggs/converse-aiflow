@@ -54,6 +54,7 @@ export const ConnectionsList = ({ onSelectConnection }: ConnectionsListProps) =>
           connections={pendingReceived}
           onAccept={handleAccept}
           onReject={handleReject}
+          showActions={true}
           type="received"
         />
       </TabsContent>

@@ -7,6 +7,7 @@ export const useConnections = () => {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [pendingReceived, setPendingReceived] = useState<Connection[]>([]);
   const [pendingSent, setPendingSent] = useState<Connection[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchConnections = async () => {
     try {
@@ -136,6 +137,8 @@ export const useConnections = () => {
     } catch (error: any) {
       console.error("Error in fetchConnections:", error);
       toast.error("Error fetching connections");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -243,5 +246,6 @@ export const useConnections = () => {
     pendingSent,
     handleAccept,
     handleReject,
+    isLoading,
   };
 };
