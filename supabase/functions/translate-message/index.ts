@@ -19,6 +19,8 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
+    console.log(`Translating text to ${targetLanguage}`);
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -30,7 +32,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a professional translator. Translate the following text to ${targetLanguage}. Only respond with the translation, nothing else.`
+            content: `You are a professional translator. Translate the following text to ${targetLanguage} and reply only with the translated text without quotes.`
           },
           {
             role: 'user',

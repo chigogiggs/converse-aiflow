@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { translateMessage } from "./useMessageTranslation";
+import { saveMessage, updateUserPreferences } from "./useMessageStore";
 
 export interface Message {
   id: string;
@@ -107,65 +109,31 @@ export const useMessages = (recipientId: string) => {
     setMessages(prev => [...prev, newMessage]);
 
     try {
-      // Get recipient's preferred language
-      const { data: recipientPrefs, error: prefsError } = await supabase
-        .from('user_preferences')
-        .select('preferred_language')
-        .eq('user_id', recipientId)
-        .maybeSingle();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
 
-      if (prefsError) throw prefsError;
+      // Translate the message
+      const { translatedText, targetLanguage } = await translateMessage(text, recipientId);
 
-      // If no preferences exist, use default language
-      const targetLanguage = recipientPrefs?.preferred_language || 'en';
+      // Save the message
+      const savedMessage = await saveMessage(
+        text,
+        translatedText,
+        outgoingLanguage,
+        targetLanguage,
+        user.user.id,
+        recipientId
+      );
 
-      // Translate the message using our Edge Function
-      const { data: translatedMessage, error } = await supabase.functions.invoke('translate-message', {
-        body: { text, targetLanguage }
-      });
-
-      if (error) throw error;
-
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) throw new Error("User not authenticated");
-
-      // Get user preferences to check first message status
-      const { data: preferences, error: prefError } = await supabase
+      // Update user preferences if first message
+      const { data: preferences } = await supabase
         .from('user_preferences')
         .select('has_sent_first_message')
         .eq('user_id', user.user.id)
         .maybeSingle();
 
-      if (prefError) throw prefError;
-
-      const isFirstMessage = !preferences?.has_sent_first_message;
-
-      const { data: savedMessage, error: saveError } = await supabase
-        .from('messages')
-        .insert([{
-          content: text,
-          translated_content: translatedMessage.translatedText,
-          source_language: outgoingLanguage,
-          target_language: targetLanguage,
-          sender_id: user.user.id,
-          recipient_id: recipientId
-        }])
-        .select()
-        .single();
-
-      if (saveError) throw saveError;
-
-      // Update user preferences if this was their first message
-      if (isFirstMessage) {
-        const { error: updateError } = await supabase
-          .from('user_preferences')
-          .upsert({ 
-            user_id: user.user.id,
-            has_sent_first_message: true,
-            preferred_language: outgoingLanguage
-          });
-
-        if (updateError) throw updateError;
+      if (!preferences?.has_sent_first_message) {
+        await updateUserPreferences(user.user.id, outgoingLanguage);
 
         toast({
           title: "Message sent",
@@ -173,11 +141,12 @@ export const useMessages = (recipientId: string) => {
         });
       }
 
+      // Update the message in the UI
       setMessages(prev => prev.map(msg => 
         msg.id === newMessage.id 
           ? { 
               ...msg, 
-              text: translatedMessage.translatedText,
+              text: translatedText,
               originalText: text,
               isTranslating: false 
             }
