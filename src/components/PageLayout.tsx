@@ -8,9 +8,15 @@ interface PageLayoutProps {
   children: React.ReactNode;
   showBackButton?: boolean;
   title?: string;
+  showFooter?: boolean;
 }
 
-export const PageLayout = ({ children, showBackButton = true, title }: PageLayoutProps) => {
+export const PageLayout = ({ 
+  children, 
+  showBackButton = true, 
+  title,
+  showFooter = true 
+}: PageLayoutProps) => {
   const navigate = useNavigate();
 
   return (
@@ -36,7 +42,7 @@ export const PageLayout = ({ children, showBackButton = true, title }: PageLayou
           {children}
         </div>
       </main>
-      <Footer />
+      {showFooter && <Footer />}
     </div>
   );
 };
