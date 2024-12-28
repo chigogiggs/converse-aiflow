@@ -121,7 +121,7 @@ export const useMessages = (recipientId: string) => {
         translatedText,
         outgoingLanguage,
         targetLanguage,
-        user.user.id,
+        user.id,
         recipientId
       );
 
@@ -129,11 +129,11 @@ export const useMessages = (recipientId: string) => {
       const { data: preferences } = await supabase
         .from('user_preferences')
         .select('has_sent_first_message')
-        .eq('user_id', user.user.id)
+        .eq('user_id', user.id)
         .maybeSingle();
 
       if (!preferences?.has_sent_first_message) {
-        await updateUserPreferences(user.user.id, outgoingLanguage);
+        await updateUserPreferences(user.id, outgoingLanguage);
 
         toast({
           title: "Message sent",
