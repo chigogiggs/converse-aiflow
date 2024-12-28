@@ -47,6 +47,7 @@ export const MessageList = ({
 
       if (profile?.preferred_language) {
         setDisplayLanguage(profile.preferred_language);
+        await updateMessagesLanguage(profile.preferred_language);
       }
     };
 
@@ -109,15 +110,18 @@ export const MessageList = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <LanguageSelector
-                value={displayLanguage}
-                onChange={handleLanguageChange}
-                label=""
-              />
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+      
+      <div className="sticky top-0 z-10 p-2 bg-gray-800 border-b border-gray-700">
+        <LanguageSelector
+          value={displayLanguage}
+          onChange={handleLanguageChange}
+          label="Display Language"
+        />
+      </div>
       
       <ScrollArea 
         className="h-full px-4 py-2" 

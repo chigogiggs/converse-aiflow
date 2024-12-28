@@ -156,17 +156,38 @@ export const useMessages = (recipientId: string) => {
   };
 
   const updateMessagesLanguage = async (language: string) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    setMessages(prev => prev.map(msg => {
-      if (msg.isOutgoing) return msg;
-      
-      return {
-        ...msg,
-        text: getMessageLanguageContent(msg, language)
-      };
-    }));
+      // Fetch the last 100 messages again to ensure we have the latest data
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
+        .or(`sender_id.eq.${recipientId},recipient_id.eq.${recipientId}`)
+        .order('created_at', { ascending: true })
+        .limit(100);
+
+      if (error) throw error;
+
+      const updatedMessages = (data as DatabaseMessage[]).map(msg => {
+        const formattedMsg = formatDatabaseMessage(msg, user.id);
+        if (!msg.isOutgoing) {
+          formattedMsg.text = getMessageLanguageContent(formattedMsg, language);
+        }
+        return formattedMsg;
+      });
+
+      setMessages(updatedMessages);
+    } catch (error) {
+      console.error('Error updating messages language:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update messages language",
+        variant: "destructive",
+      });
+    }
   };
 
   return {
