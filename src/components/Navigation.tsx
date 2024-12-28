@@ -1,5 +1,5 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { LogOut, MessageCircle, Users, Phone, Video } from "lucide-react";
+import { MessageCircle, Users, Phone, Video, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -27,40 +27,19 @@ export const Navigation = () => {
     enabled: !!recipientId
   });
 
-  const handleLogout = async () => {
-    try {
-      const { error } = await supabase.auth.signOut({
-        scope: 'global'
-      });
-      
-      if (error) {
-        console.error("Logout error:", error);
-        throw error;
-      }
-      
-      localStorage.clear();
-      
-      toast({
-        title: "Logged out successfully",
-        description: "All sessions have been terminated",
-      });
-      
-      navigate("/login");
-    } catch (error: any) {
-      console.error("Logout error:", error);
-      toast({
-        title: "Error logging out",
-        description: error.message || "An error occurred while logging out",
-        variant: "destructive",
-      });
-      navigate("/login");
-    }
-  };
-
   return (
     <nav className="h-16 sticky top-0 z-50 w-full bg-white border-b">
       <div className="container mx-auto h-full flex justify-between items-center px-6">
         <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(-1)}
+            className="mr-2"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          
           {recipientProfile ? (
             <>
               <Button 
@@ -111,15 +90,6 @@ export const Navigation = () => {
             </>
           )}
         </div>
-
-        <Button
-          variant="secondary"
-          onClick={handleLogout}
-          className="gap-2 bg-white hover:bg-gray-100 shadow-sm border transition-all duration-200 ease-in-out hover:shadow-md"
-        >
-          <LogOut className="h-4 w-4" />
-          <span className="hidden sm:inline">Logout</span>
-        </Button>
       </div>
     </nav>
   );
