@@ -12,14 +12,12 @@ serve(async (req) => {
   }
 
   try {
-    const { text, sourceLanguage, targetLanguage } = await req.json();
+    const { text, targetLanguage } = await req.json();
     
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
       throw new Error('OpenAI API key not configured');
     }
-
-    console.log(`Translating text from ${sourceLanguage} to ${targetLanguage}`);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -32,7 +30,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a professional translator. Translate the following text from ${sourceLanguage} to ${targetLanguage}. Only respond with the translation, nothing else.`
+            content: `You are a professional translator. Translate the following text to ${targetLanguage}. Only respond with the translation, nothing else.`
           },
           {
             role: 'user',

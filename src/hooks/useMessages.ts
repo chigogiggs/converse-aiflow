@@ -112,16 +112,16 @@ export const useMessages = (recipientId: string) => {
         .from('user_preferences')
         .select('preferred_language')
         .eq('user_id', recipientId)
-        .maybeSingle();  // Changed from .single() to .maybeSingle()
+        .maybeSingle();
 
       if (prefsError) throw prefsError;
 
       // If no preferences exist, use default language
       const targetLanguage = recipientPrefs?.preferred_language || 'en';
 
-      // Translate the message
+      // Translate the message using our Edge Function
       const { data: translatedMessage, error } = await supabase.functions.invoke('translate-message', {
-        body: { text, sourceLanguage: outgoingLanguage, targetLanguage }
+        body: { text, targetLanguage }
       });
 
       if (error) throw error;
@@ -134,7 +134,7 @@ export const useMessages = (recipientId: string) => {
         .from('user_preferences')
         .select('has_sent_first_message')
         .eq('user_id', user.user.id)
-        .maybeSingle();  // Changed from .single() to .maybeSingle()
+        .maybeSingle();
 
       if (prefError) throw prefError;
 
