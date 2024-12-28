@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { translateMessage } from "./useMessageTranslation";
 import { saveMessage, updateUserPreferences } from "./useMessageStore";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 export interface Message {
   id: string;
@@ -19,7 +20,7 @@ export interface Message {
 export const useMessages = (recipientId: string) => {
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
-  const channelRef = useRef<any>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
   useEffect(() => {
     const fetchMessages = async () => {
