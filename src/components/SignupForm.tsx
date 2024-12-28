@@ -120,7 +120,7 @@ export const SignupForm = () => {
   };
 
   return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 w-full max-w-md mx-auto">
+    <div className="grid gap-6">
       <div className="relative">
         <AnimatePresence mode="wait">
           {slides[currentStep]}
@@ -131,6 +131,7 @@ export const SignupForm = () => {
             variant="ghost"
             onClick={() => setCurrentStep(current => current - 1)}
             disabled={currentStep === 0}
+            className="text-muted-foreground"
           >
             <ChevronLeft className="w-4 h-4 mr-2" />
             Back
@@ -141,7 +142,7 @@ export const SignupForm = () => {
               <div
                 key={index}
                 className={`w-2 h-2 rounded-full ${
-                  index === currentStep ? "bg-indigo-600" : "bg-gray-300"
+                  index === currentStep ? "bg-primary" : "bg-muted"
                 }`}
               />
             ))}
@@ -151,6 +152,7 @@ export const SignupForm = () => {
             <Button
               onClick={() => setCurrentStep(current => current + 1)}
               disabled={!canGoNext()}
+              className="bg-primary hover:bg-primary/90"
             >
               Next
               <ChevronRight className="w-4 h-4 ml-2" />
@@ -159,6 +161,7 @@ export const SignupForm = () => {
             <Button
               onClick={handleSignup}
               disabled={!canGoNext()}
+              className="bg-primary hover:bg-primary/90"
             >
               Create Account
             </Button>
@@ -167,17 +170,28 @@ export const SignupForm = () => {
       </div>
 
       {currentStep === 0 && (
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-600">
-            Already have an account?{" "}
-            <button
-              type="button"
-              onClick={() => navigate("/login")}
-              className="text-indigo-600 hover:text-indigo-700 font-medium transition-colors"
-            >
-              Sign in
-            </button>
-          </p>
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">
+              Or continue with
+            </span>
+          </div>
+        </div>
+      )}
+
+      {currentStep === 0 && (
+        <div className="text-center text-sm text-muted-foreground">
+          Already have an account?{" "}
+          <button
+            type="button"
+            onClick={() => navigate("/login")}
+            className="underline underline-offset-4 hover:text-primary"
+          >
+            Sign in
+          </button>
         </div>
       )}
     </div>
