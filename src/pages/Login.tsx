@@ -1,7 +1,7 @@
 import { SignInForm } from "@/components/SignInForm";
-import { DeleteAllDataButton } from "@/components/DeleteAllDataButton";
+import { Logo } from "@/components/Logo";
 
-export const Login = () => {
+const Login = () => {
   return (
     <div className="container relative min-h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
       <div className="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex dark:border-r">
@@ -34,6 +34,7 @@ export const Login = () => {
       </div>
       <div className="lg:p-8">
         <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+          <Logo className="mx-auto mb-4" />
           <div className="flex flex-col space-y-2 text-center">
             <h1 className="text-2xl font-semibold tracking-tight">
               Welcome back
@@ -43,9 +44,6 @@ export const Login = () => {
             </p>
           </div>
           <SignInForm />
-          <div className="mt-4">
-            <DeleteAllDataButton />
-          </div>
         </div>
       </div>
     </div>
