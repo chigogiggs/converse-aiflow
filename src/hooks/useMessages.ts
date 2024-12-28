@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { translateMessage } from "./useMessageTranslation";
-import { saveMessage } from "./useMessageStore";
 import { RealtimeChannel } from "@supabase/supabase-js";
 
 export interface Message {
@@ -15,6 +13,7 @@ export interface Message {
   isPinned?: boolean;
   isEdited?: boolean;
   senderId?: string;
+  translations?: Record<string, string>;
 }
 
 export const useMessages = (recipientId: string) => {
@@ -28,6 +27,12 @@ export const useMessages = (recipientId: string) => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user || !recipientId) return;
 
+        const { data: recipientProfile } = await supabase
+          .from('profiles')
+          .select('preferred_language')
+          .eq('id', recipientId)
+          .single();
+
         const { data, error } = await supabase
           .from('messages')
           .select('*')
@@ -39,11 +44,12 @@ export const useMessages = (recipientId: string) => {
 
         const formattedMessages = data.map(msg => ({
           id: msg.id,
-          text: msg.translated_content || msg.content,
-          originalText: msg.translated_content ? msg.content : undefined,
+          text: msg.translations?.[recipientProfile?.preferred_language?.toLowerCase() || 'english'] || msg.content,
+          originalText: msg.content,
           isOutgoing: msg.sender_id === user.id,
           timestamp: new Date(msg.created_at).toLocaleTimeString(),
-          senderId: msg.sender_id
+          senderId: msg.sender_id,
+          translations: msg.translations
         }));
 
         setMessages(formattedMessages);
@@ -80,14 +86,21 @@ export const useMessages = (recipientId: string) => {
 
             if (payload.eventType === 'INSERT') {
               const newMessage = payload.new;
+              const { data: recipientProfile } = await supabase
+                .from('profiles')
+                .select('preferred_language')
+                .eq('id', recipientId)
+                .single();
+
               if (newMessage.sender_id !== user.id) {
                 setMessages(prev => [...prev, {
                   id: newMessage.id,
-                  text: newMessage.translated_content || newMessage.content,
-                  originalText: newMessage.translated_content ? newMessage.content : undefined,
+                  text: newMessage.translations?.[recipientProfile?.preferred_language?.toLowerCase() || 'english'] || newMessage.content,
+                  originalText: newMessage.content,
                   isOutgoing: newMessage.sender_id === user.id,
                   timestamp: new Date(newMessage.created_at).toLocaleTimeString(),
-                  senderId: newMessage.sender_id
+                  senderId: newMessage.sender_id,
+                  translations: newMessage.translations
                 }]);
               }
             }
@@ -122,37 +135,41 @@ export const useMessages = (recipientId: string) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // Get recipient's preferred language from their profile
-      const { data: recipientProfile, error: profileError } = await supabase
-        .from('profiles')
-        .select('preferred_language')
-        .eq('id', recipientId)
-        .single();
+      // Get translations for all supported languages
+      const { data: translationsResponse } = await supabase.functions.invoke('translate-message', {
+        body: { text }
+      });
 
-      if (profileError) {
-        console.error("Error fetching recipient profile:", profileError);
-        throw new Error("Failed to get recipient's language preference");
+      if (!translationsResponse?.translations) {
+        throw new Error("Failed to get translations");
       }
 
-      const targetLanguage = recipientProfile.preferred_language;
-      const { translatedText } = await translateMessage(text, recipientId);
+      // Convert language names to lowercase for consistency
+      const translations = Object.entries(translationsResponse.translations).reduce((acc, [key, value]) => {
+        acc[key.toLowerCase()] = value;
+        return acc;
+      }, {} as Record<string, string>);
 
-      const savedMessage = await saveMessage(
-        text,
-        translatedText,
-        'en', // Source language is always English for now
-        targetLanguage,
-        user.id,
-        recipientId
-      );
+      // Save message with all translations
+      const { data: savedMessage, error: saveError } = await supabase
+        .from('messages')
+        .insert([{
+          content: text,
+          translations,
+          sender_id: user.id,
+          recipient_id: recipientId
+        }])
+        .select()
+        .single();
+
+      if (saveError) throw saveError;
 
       setMessages(prev => prev.map(msg => 
         msg.id === newMessage.id 
           ? { 
               ...msg, 
               id: savedMessage.id,
-              text: translatedText,
-              originalText: text,
+              translations,
               isTranslating: false 
             }
           : msg
@@ -171,9 +188,24 @@ export const useMessages = (recipientId: string) => {
     }
   };
 
+  const updateMessagesLanguage = async (language: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    setMessages(prev => prev.map(msg => {
+      if (msg.isOutgoing) return msg;
+      
+      return {
+        ...msg,
+        text: msg.translations?.[language.toLowerCase()] || msg.text
+      };
+    }));
+  };
+
   return {
     messages,
     setMessages,
-    sendMessage
+    sendMessage,
+    updateMessagesLanguage
   };
 };

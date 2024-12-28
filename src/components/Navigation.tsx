@@ -32,7 +32,7 @@ export const Navigation = () => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const recipientId = searchParams.get('recipient');
-  const { messages, setMessages } = useMessages(recipientId || '');
+  const { messages, setMessages, updateMessagesLanguage } = useMessages(recipientId || '');
 
   const { data: recipientProfile } = useQuery({
     queryKey: ['profile', recipientId],
@@ -71,40 +71,22 @@ export const Navigation = () => {
     if (!recipientId || !messages.length) return;
 
     const loadingToast = toast({
-      title: "Translating messages",
-      description: "Please wait while we translate your messages...",
+      title: "Updating messages language",
+      description: "Please wait while we update the messages...",
     });
 
     try {
-      const updatedMessages = await Promise.all(
-        messages.map(async (message) => {
-          if (message.isOutgoing) {
-            const { translatedText } = await translateMessage(
-              message.originalText || message.text,
-              recipientId
-            );
-            return {
-              ...message,
-              text: translatedText,
-              originalText: message.originalText || message.text,
-            };
-          }
-          return message;
-        })
-      );
-
-      // Update the messages state with the translated messages
-      setMessages(updatedMessages);
+      await updateMessagesLanguage(languageCode);
 
       toast({
-        title: "Translation complete",
-        description: "All messages have been translated successfully.",
+        title: "Language updated",
+        description: "Messages are now displayed in the selected language.",
       });
     } catch (error) {
       console.error('Translation error:', error);
       toast({
-        title: "Translation failed",
-        description: "There was an error translating the messages.",
+        title: "Update failed",
+        description: "There was an error updating the messages language.",
         variant: "destructive",
       });
     }

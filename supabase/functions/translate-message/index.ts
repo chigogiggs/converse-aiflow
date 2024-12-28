@@ -8,16 +8,30 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const supportedLanguages = [
+  'English',
+  'Spanish',
+  'French',
+  'German',
+  'Italian',
+  'Portuguese',
+  'Russian',
+  'Chinese',
+  'Japanese',
+  'Korean'
+];
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { text, targetLanguage } = await req.json();
-    console.log(`Translating text to ${targetLanguage}`);
+    const { text } = await req.json();
+    console.log(`Translating text to multiple languages: ${text}`);
 
-    const prompt = `Translate this text to ${targetLanguage} and when translating, maintain the case (lowercase/uppercase) and reply only with the translated text without quotes and nothing else.\n\ntext: ${text}`;
+    const languageList = supportedLanguages.join(', ');
+    const prompt = `Translate this text to ${languageList} and when translating, maintain the case (lowercase/uppercase) and reply only with a json with key as the language from the list and the value as the translated text without quotes and nothing else.\n\ntext: ${text}`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -41,9 +55,9 @@ serve(async (req) => {
     const data = await response.json();
     console.log('Translation completed successfully');
     
-    const translatedText = data.choices[0].message.content.trim();
+    const translations = JSON.parse(data.choices[0].message.content);
 
-    return new Response(JSON.stringify({ translatedText }), {
+    return new Response(JSON.stringify({ translations }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
