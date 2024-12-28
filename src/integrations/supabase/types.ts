@@ -56,6 +56,7 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          read: boolean | null
           recipient_id: string
           sender_id: string
           source_language: string
@@ -67,6 +68,7 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          read?: boolean | null
           recipient_id: string
           sender_id: string
           source_language?: string
@@ -78,6 +80,7 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          read?: boolean | null
           recipient_id?: string
           sender_id?: string
           source_language?: string

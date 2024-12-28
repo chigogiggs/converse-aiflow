@@ -1,22 +1,29 @@
-import { Connection } from "@/integrations/supabase/types/tables";
 import { UserAvatar } from "./UserAvatar";
-import { Badge } from "./ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "./ui/badge";
 
 interface ConnectionItemProps {
-  connection: Connection;
-  onSelect?: (connectionId: string) => void;
+  connection: {
+    id: string;
+    display_name: string;
+    avatar_url?: string;
+  };
+  onSelect?: (id: string) => void;
+  showActions?: boolean;
+  onAccept?: (id: string) => void;
+  onReject?: (id: string) => void;
 }
 
-export const ConnectionItem = ({ connection, onSelect }: ConnectionItemProps) => {
-  const profile = connection.recipient || connection.profiles;
-  
-  if (!profile) return null;
-
-  // Query for unread messages count
+export const ConnectionItem = ({ 
+  connection,
+  onSelect,
+  showActions = false,
+  onAccept,
+  onReject,
+}: ConnectionItemProps) => {
   const { data: unreadCount } = useQuery({
-    queryKey: ['unreadMessages', profile.id],
+    queryKey: ['unreadMessages', connection.id],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return 0;
@@ -24,36 +31,60 @@ export const ConnectionItem = ({ connection, onSelect }: ConnectionItemProps) =>
       const { count } = await supabase
         .from('messages')
         .select('*', { count: 'exact', head: true })
-        .eq('sender_id', profile.id)
         .eq('recipient_id', user.id)
+        .eq('sender_id', connection.id)
         .eq('read', false);
 
       return count || 0;
-    }
+    },
   });
 
   return (
-    <button
-      onClick={() => onSelect?.(connection.recipient_id)}
-      className="flex items-center space-x-4 w-full p-2 rounded-lg hover:bg-gray-100 transition-colors relative"
+    <div 
+      className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer rounded-lg transition-colors relative group"
+      onClick={() => onSelect?.(connection.id)}
     >
-      <UserAvatar
-        src={profile.avatar_url || undefined}
-        fallback={profile.display_name?.[0] || "?"}
-        size="md"
-      />
-      <div className="flex-1 text-left">
-        <p className="font-medium">{profile.display_name}</p>
-        <p className="text-sm text-gray-500">@{profile.username}</p>
+      <div className="flex items-center space-x-4">
+        <UserAvatar
+          src={connection.avatar_url}
+          fallback={connection.display_name[0]}
+        />
+        <div>
+          <h3 className="font-medium">{connection.display_name}</h3>
+          {unreadCount && unreadCount > 0 && (
+            <Badge variant="destructive" className="ml-2">
+              {unreadCount} unread
+            </Badge>
+          )}
+        </div>
       </div>
-      {unreadCount && unreadCount > 0 && (
-        <Badge 
-          variant="destructive" 
-          className="absolute top-2 right-2"
-        >
-          {unreadCount}
-        </Badge>
+
+      {showActions && (
+        <div className="flex space-x-2">
+          {onAccept && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onAccept(connection.id);
+              }}
+              className="text-green-600 hover:text-green-700"
+            >
+              Accept
+            </button>
+          )}
+          {onReject && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onReject(connection.id);
+              }}
+              className="text-red-600 hover:text-red-700"
+            >
+              Reject
+            </button>
+          )}
+        </div>
       )}
-    </button>
+    </div>
   );
 };

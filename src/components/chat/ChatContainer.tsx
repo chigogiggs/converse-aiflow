@@ -68,6 +68,7 @@ export const ChatContainer = () => {
         isTyping={isTyping}
         outgoingLanguage={outgoingLanguage}
         onTranslateAll={handleTranslateAll}
+        recipientId={recipientId}
       />
 
       <div className="mt-auto border-t">

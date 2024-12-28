@@ -28,7 +28,7 @@ export const ChatHeader = ({ recipientId }: ChatHeaderProps) => {
   });
 
   return (
-    <div className="flex items-center justify-between border-b p-4 bg-white shadow-sm animate-fade-in">
+    <div className="flex items-center justify-between border-b p-4 bg-white shadow-sm animate-fade-in fixed top-0 w-full z-10">
       <div className="flex items-center space-x-4">
         <Button 
           variant="ghost" 

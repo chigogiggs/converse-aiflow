@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MessageListProps {
   messages: Message[];
@@ -14,6 +15,7 @@ interface MessageListProps {
   isTyping: boolean;
   outgoingLanguage: string;
   onTranslateAll?: () => void;
+  recipientId: string;
 }
 
 export const MessageList = ({
@@ -22,11 +24,29 @@ export const MessageList = ({
   setSearchQuery,
   isTyping,
   outgoingLanguage,
-  onTranslateAll
+  onTranslateAll,
+  recipientId
 }: MessageListProps) => {
   const [showSearch, setShowSearch] = useState(false);
   const [displayLanguage, setDisplayLanguage] = useState("en");
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const markMessagesAsRead = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Mark all messages from this recipient as read
+      await supabase
+        .from('messages')
+        .update({ read: true })
+        .eq('recipient_id', user.id)
+        .eq('sender_id', recipientId)
+        .eq('read', false);
+    };
+
+    markMessagesAsRead();
+  }, [recipientId, messages]);
 
   const handleScroll = (e: any) => {
     if (e.target.scrollTop > 100) {
@@ -37,7 +57,7 @@ export const MessageList = ({
   };
 
   return (
-    <div className="relative flex-1">
+    <div className="relative flex-1 mt-20">
       <AnimatePresence>
         {showSearch && (
           <motion.div
