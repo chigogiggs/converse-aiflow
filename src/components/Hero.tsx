@@ -3,22 +3,17 @@ import { useNavigate } from "react-router-dom";
 import { ChatPreview } from "./ChatPreview";
 import { Logo } from "./Logo";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
 
 export const Hero = () => {
   const navigate = useNavigate();
 
   const handleStartChat = async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      toast({
-        title: "Authentication required",
-        description: "Please log in to start chatting",
-      });
+    if (session) {
+      navigate("/home");
+    } else {
       navigate("/login");
-      return;
     }
-    navigate("/chat");
   };
 
   const sampleChats = [

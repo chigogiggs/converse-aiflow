@@ -32,7 +32,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a professional translator. Translate the following text to ${targetLanguage} and reply only with the translated text without quotes.`
+            content: `You are a professional translator. Translate the following text to ${targetLanguage} and reply only with the translated text without quotes or any additional commentary.`
           },
           {
             role: 'user',
@@ -47,7 +47,7 @@ serve(async (req) => {
     const data = await response.json();
     console.log('Translation completed successfully');
     
-    const translatedText = data.choices[0].message.content;
+    const translatedText = data.choices[0].message.content.trim();
 
     return new Response(JSON.stringify({ translatedText }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

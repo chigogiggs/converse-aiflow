@@ -134,11 +134,6 @@ export const useMessages = (recipientId: string) => {
 
       if (!preferences?.has_sent_first_message) {
         await updateUserPreferences(user.id, outgoingLanguage);
-
-        toast({
-          title: "Message sent",
-          description: "Your message has been translated and sent",
-        });
       }
 
       // Update the message in the UI
