@@ -16,21 +16,23 @@ export const SingleMessageContent = ({
   showOriginal
 }: SingleMessageContentProps) => {
   return (
-    <div
-      className={`relative rounded-lg px-4 py-2 text-sm ${
-        isOutgoing
-          ? "bg-primary text-primary-foreground"
-          : "bg-muted text-foreground"
-      }`}
-      onClick={originalText ? onToggleOriginal : undefined}
-    >
-      {isTranslating ? (
-        <div className="animate-pulse">Translating...</div>
-      ) : (
-        <p>{showOriginal ? originalText : message}</p>
-      )}
+    <div className="relative">
+      <div
+        className={`relative rounded-lg px-4 py-2 text-sm ${
+          isOutgoing
+            ? "bg-primary text-primary-foreground"
+            : "bg-muted text-foreground"
+        }`}
+        onClick={originalText ? onToggleOriginal : undefined}
+      >
+        {isTranslating ? (
+          <div className="animate-pulse">Translating...</div>
+        ) : (
+          <p>{showOriginal ? originalText : message}</p>
+        )}
+      </div>
       {originalText && !isTranslating && (
-        <div className="absolute -bottom-4 right-0 text-xs text-gray-500">
+        <div className="absolute -bottom-5 right-0 text-[10px] text-gray-500 mt-1">
           Click to {showOriginal ? "show translation" : "show original"}
         </div>
       )}

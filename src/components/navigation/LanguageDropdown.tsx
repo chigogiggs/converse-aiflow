@@ -10,7 +10,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useLocation } from "react-router-dom";
 import { useMessages } from "@/hooks/useMessages";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 interface LanguageDropdownProps {
   recipientId?: string | null;
@@ -19,41 +19,65 @@ interface LanguageDropdownProps {
 export const LanguageDropdown = ({ recipientId }: LanguageDropdownProps) => {
   const location = useLocation();
   const { updateMessagesLanguage } = useMessages(recipientId || '');
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('en');
+
+  useEffect(() => {
+    const fetchCurrentLanguage = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('preferred_language')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.preferred_language) {
+        setSelectedLanguage(profile.preferred_language);
+      }
+    };
+
+    fetchCurrentLanguage();
+  }, []);
 
   const handleLanguageChange = async (languageCode: string) => {
-    const loadingToast = toast({
-      title: "Updating messages language",
-      description: "Please wait while we update the messages...",
-    });
+    setSelectedLanguage(languageCode); // Update UI immediately
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      await supabase
+      // Update profile
+      const { error: updateError } = await supabase
         .from('profiles')
         .update({ preferred_language: languageCode })
         .eq('id', user.id);
 
+      if (updateError) throw updateError;
+
+      // Update messages if in chat
       if (location.pathname === '/chat' && recipientId) {
         await updateMessagesLanguage(languageCode);
       }
 
       toast({
         title: "Language updated",
-        description: "Messages are now displayed in the selected language.",
+        description: "Messages will now be displayed in the selected language.",
+        duration: 2000,
       });
     } catch (error) {
       console.error('Translation error:', error);
+      setSelectedLanguage(selectedLanguage); // Revert UI on error
       toast({
         title: "Update failed",
         description: "There was an error updating the messages language.",
         variant: "destructive",
+        duration: 2000,
       });
     }
   };
 
-  // Subscribe to profile changes to update messages in real-time
+  // Subscribe to profile changes
   useEffect(() => {
     const channel = supabase
       .channel('profile_changes')
@@ -63,12 +87,14 @@ export const LanguageDropdown = ({ recipientId }: LanguageDropdownProps) => {
           event: 'UPDATE',
           schema: 'public',
           table: 'profiles',
-          filter: `id=eq.${recipientId}`,
         },
-        async (payload) => {
+        async (payload: any) => {
           const newLanguage = payload.new.preferred_language;
           if (newLanguage && location.pathname === '/chat') {
-            await updateMessagesLanguage(newLanguage);
+            setSelectedLanguage(newLanguage);
+            if (recipientId) {
+              await updateMessagesLanguage(newLanguage);
+            }
           }
         }
       )
@@ -77,7 +103,7 @@ export const LanguageDropdown = ({ recipientId }: LanguageDropdownProps) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [recipientId, location.pathname]);
+  }, [recipientId, location.pathname, updateMessagesLanguage]);
 
   return (
     <DropdownMenu>
@@ -95,7 +121,9 @@ export const LanguageDropdown = ({ recipientId }: LanguageDropdownProps) => {
           <DropdownMenuItem
             key={lang.code}
             onClick={() => handleLanguageChange(lang.code)}
-            className="text-[#C8C8C9] hover:bg-[#403E43] hover:text-[#7E69AB] cursor-pointer"
+            className={`text-[#C8C8C9] hover:bg-[#403E43] hover:text-[#7E69AB] cursor-pointer ${
+              selectedLanguage === lang.code ? 'bg-[#403E43] text-[#7E69AB]' : ''
+            }`}
           >
             {lang.name}
           </DropdownMenuItem>
