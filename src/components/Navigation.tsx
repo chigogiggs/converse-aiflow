@@ -38,8 +38,8 @@ export const Navigation = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full py-4 px-6 bg-white border-b">
-      <div className="container mx-auto flex justify-between items-center">
+    <nav className="h-16 sticky top-0 z-50 w-full bg-white border-b">
+      <div className="container mx-auto h-full flex justify-between items-center px-6">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -63,7 +63,7 @@ export const Navigation = () => {
         <Button
           variant="secondary"
           onClick={handleLogout}
-          className="fixed top-4 right-6 z-50 gap-2 bg-white hover:bg-gray-100 shadow-sm border transition-all duration-200 ease-in-out hover:shadow-md"
+          className="gap-2 bg-white hover:bg-gray-100 shadow-sm border transition-all duration-200 ease-in-out hover:shadow-md"
         >
           <LogOut className="h-4 w-4" />
           <span className="hidden sm:inline">Logout</span>

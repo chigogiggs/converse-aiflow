@@ -56,10 +56,12 @@ export const ChatContainer = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen max-h-screen bg-white">
-      <ChatHeader recipientId={recipientId} />
+    <div className="flex flex-col h-full bg-white">
+      <div className="sticky top-16 z-10">
+        <ChatHeader recipientId={recipientId} />
+      </div>
       
-      <div className="flex-1 overflow-hidden pt-16">
+      <div className="flex-1 overflow-hidden">
         <PinnedMessages messages={messages} pinnedMessages={pinnedMessages} />
 
         <MessageList
@@ -73,7 +75,7 @@ export const ChatContainer = () => {
         />
       </div>
 
-      <div className="mt-auto border-t sticky bottom-0 bg-white">
+      <div className="sticky bottom-0 border-t bg-white">
         <ChatInput 
           onSendMessage={handleSendMessage} 
           onTyping={handleTyping}

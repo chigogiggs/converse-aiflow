@@ -20,27 +20,29 @@ export const PageLayout = ({
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col">
       <Navigation />
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          {(showBackButton || title) && (
-            <div className="flex items-center gap-4 mb-6">
-              {showBackButton && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate(-1)}
-                  className="rounded-full"
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-              )}
-              {title && <h1 className="text-2xl font-bold">{title}</h1>}
+      <main className="flex-1">
+        {(showBackButton || title) && (
+          <div className="container mx-auto px-4 py-8">
+            <div className="max-w-4xl mx-auto">
+              <div className="flex items-center gap-4 mb-6">
+                {showBackButton && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => navigate(-1)}
+                    className="rounded-full"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </Button>
+                )}
+                {title && <h1 className="text-2xl font-bold">{title}</h1>}
+              </div>
             </div>
-          )}
-          {children}
-        </div>
+          </div>
+        )}
+        {children}
       </main>
       {showFooter && <Footer />}
     </div>
