@@ -140,8 +140,8 @@ export const ChatMessage = ({
             </TooltipTrigger>
             <TooltipContent className="bg-popover text-popover-foreground border-border/50">
               <p>
-                {isOutgoing 
-                  ? `${isMobile ? "Tap" : "Click"} to see what the other person saw`
+                {showOriginal 
+                  ? `${isMobile ? "Tap" : "Click"} to see translated message`
                   : `${isMobile ? "Tap" : "Click"} to see original message`
                 }
               </p>
