@@ -1,5 +1,4 @@
 import { cn } from "@/lib/utils";
-import { MessageTranslationIndicator } from "./MessageTranslationIndicator";
 
 interface SingleMessageContentProps {
   message: string;
@@ -21,8 +20,9 @@ export const SingleMessageContent = ({
   return (
     <div className="relative">
       <div
+        onClick={originalText ? onToggleOriginal : undefined}
         className={cn(
-          "relative rounded-lg px-4 py-2 text-sm",
+          "relative rounded-lg px-4 py-2 text-sm cursor-pointer",
           isOutgoing
             ? "bg-primary text-primary-foreground"
             : "bg-muted text-foreground"
@@ -35,11 +35,14 @@ export const SingleMessageContent = ({
         )}
       </div>
       {originalText && !isTranslating && (
-        <MessageTranslationIndicator
-          isOutgoing={isOutgoing}
-          showOriginal={showOriginal}
-          onClick={onToggleOriginal}
-        />
+        <span
+          className={cn(
+            "text-[10px] text-gray-500 mt-1",
+            isOutgoing ? "text-left" : "text-right"
+          )}
+        >
+          Click to {showOriginal ? "show translation" : "show original"}
+        </span>
       )}
     </div>
   );

@@ -16,6 +16,20 @@ interface LanguageDropdownProps {
   recipientId?: string | null;
 }
 
+const languages = [
+  { code: "en", name: "English" },
+  { code: "es", name: "Spanish" },
+  { code: "fr", name: "French" },
+  { code: "de", name: "German" },
+  { code: "it", name: "Italian" },
+  { code: "pt", name: "Portuguese" },
+  { code: "ru", name: "Russian" },
+  { code: "zh", name: "Chinese" },
+  { code: "ja", name: "Japanese" },
+  { code: "ko", name: "Korean" },
+  { code: "tr", name: "Turkish" },
+];
+
 export const LanguageDropdown = ({ recipientId }: LanguageDropdownProps) => {
   const location = useLocation();
   const { updateMessagesLanguage } = useMessages(recipientId || '');
@@ -99,17 +113,3 @@ export const LanguageDropdown = ({ recipientId }: LanguageDropdownProps) => {
     </DropdownMenu>
   );
 };
-
-const languages = [
-  { code: "en", name: "English" },
-  { code: "es", name: "Spanish" },
-  { code: "fr", name: "French" },
-  { code: "de", name: "German" },
-  { code: "it", name: "Italian" },
-  { code: "pt", name: "Portuguese" },
-  { code: "ru", name: "Russian" },
-  { code: "zh", name: "Chinese" },
-  { code: "ja", name: "Japanese" },
-  { code: "ko", name: "Korean" },
-  { code: "tr", name: "Turkish" },
-];
