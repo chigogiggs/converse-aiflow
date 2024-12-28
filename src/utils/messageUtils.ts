@@ -12,7 +12,8 @@ export const formatDatabaseMessage = (
     isOutgoing: msg.sender_id === userId,
     timestamp: new Date(msg.created_at).toLocaleTimeString(),
     senderId: msg.sender_id,
-    translations: msg.translations || undefined
+    translations: msg.translations || undefined,
+    read: msg.read || false
   };
 };
 

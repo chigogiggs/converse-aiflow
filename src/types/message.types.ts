@@ -12,6 +12,7 @@ export interface Message {
   translations?: Record<string, string>;
   replyToId?: string;
   is_deleted?: boolean;
+  read?: boolean;
 }
 
 export interface DatabaseMessage {
