@@ -13,7 +13,21 @@ export const translateMessage = async (
 
   if (prefsError) throw prefsError;
 
-  // If no preferences exist, use default language
+  // If no preferences exist, create default preferences
+  if (!recipientPrefs) {
+    const { error: createError } = await supabase
+      .from('user_preferences')
+      .insert([
+        { 
+          user_id: recipientId,
+          preferred_language: 'en' // Default to English
+        }
+      ]);
+
+    if (createError) throw createError;
+  }
+
+  // Use either existing preference or default to English
   const targetLanguage = recipientPrefs?.preferred_language || 'en';
 
   // Get full language name for better translation
