@@ -5,13 +5,29 @@ import { Skeleton } from "../ui/skeleton";
 interface ConnectionsTabProps {
   connections: Connection[];
   onSelectConnection?: (connectionId: string) => void;
+  isLoading?: boolean;
 }
 
-export const ConnectionsTab = ({ connections, onSelectConnection }: ConnectionsTabProps) => {
+export const ConnectionsTab = ({ 
+  connections, 
+  onSelectConnection,
+  isLoading 
+}: ConnectionsTabProps) => {
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <Skeleton key={i} className="h-16 w-full" />
+        ))}
+      </div>
+    );
+  }
+
   if (!connections?.length) {
     return (
       <div className="text-center py-8 text-gray-500">
         <p>No connections yet</p>
+        <p className="text-sm">Start connecting with other users!</p>
       </div>
     );
   }

@@ -2,12 +2,13 @@ import { useConnections } from "@/hooks/useConnections";
 import { ConnectionItem } from "../ConnectionItem";
 
 export const FullConnectionsList = () => {
-  const { connections } = useConnections();
+  const { connections, isLoading } = useConnections();
 
   if (!connections?.length) {
     return (
       <div className="text-center py-8 text-gray-500">
         <p>No connections yet</p>
+        <p className="text-sm">Start connecting with other users!</p>
       </div>
     );
   }
