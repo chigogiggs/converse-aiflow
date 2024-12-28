@@ -124,7 +124,7 @@ export const useMessages = (recipientId: string) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // Get recipient preferences with maybeSingle()
+      // Get recipient's preferred language
       const { data: recipientPrefs, error: prefsError } = await supabase
         .from('user_preferences')
         .select('preferred_language')
@@ -151,7 +151,7 @@ export const useMessages = (recipientId: string) => {
         text,
         translatedText,
         outgoingLanguage,
-        targetLanguage,
+        targetLanguage, // Use recipient's preferred language as target
         user.id,
         recipientId
       );
