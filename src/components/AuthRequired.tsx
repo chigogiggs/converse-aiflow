@@ -1,37 +1,100 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
+
+const PUBLIC_ROUTES = ["/", "/about", "/login", "/signup"];
 
 export const AuthRequired = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session && !['/login', '/signup'].includes(window.location.pathname)) {
-        navigate('/login');
+      try {
+        // Clear any stale auth state first
+        if (!PUBLIC_ROUTES.includes(location.pathname)) {
+          localStorage.removeItem('supabase.auth.token');
+        }
+
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error("Session error:", sessionError);
+          throw sessionError;
+        }
+
+        if (!session) {
+          if (!PUBLIC_ROUTES.includes(location.pathname)) {
+            toast({
+              title: "Authentication Required",
+              description: "Please log in to continue",
+              variant: "destructive",
+            });
+            navigate("/login", { replace: true });
+          }
+          return;
+        }
+
+        // Verify the user exists and is valid
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        if (userError || !user) {
+          console.error("User verification failed:", userError);
+          // Force logout if user verification fails
+          await supabase.auth.signOut({ scope: 'global' });
+          localStorage.clear();
+          throw new Error("User verification failed");
+        }
+
+        setIsAuthenticated(true);
+      } catch (error: any) {
+        console.error("Auth check error:", error);
+        toast({
+          title: "Authentication Error",
+          description: "Please try logging in again",
+          variant: "destructive",
+        });
+        navigate("/login", { replace: true });
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     checkAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT' && !['/login', '/signup'].includes(window.location.pathname)) {
-        navigate('/login');
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        setIsAuthenticated(false);
+        if (!PUBLIC_ROUTES.includes(location.pathname)) {
+          navigate("/login", { replace: true });
+        }
+      } else if (event === 'SIGNED_IN' && session) {
+        setIsAuthenticated(true);
       }
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, location.pathname]);
 
   if (isLoading) {
-    return null;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
-  return <>{children}</>;
+  // Only render children if authenticated or on a public route
+  if (PUBLIC_ROUTES.includes(location.pathname) || isAuthenticated) {
+    return <>{children}</>;
+  }
+
+  return null;
 };

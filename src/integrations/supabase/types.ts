@@ -11,39 +11,39 @@ export type Database = {
     Tables: {
       connections: {
         Row: {
-          created_at: string
+          created_at: string | null
           id: string
           recipient_id: string
           requester_id: string
           status: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           id?: string
           recipient_id: string
           requester_id: string
           status?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           id?: string
           recipient_id?: string
           requester_id?: string
           status?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "connections_recipient_id_fkey"
+            foreignKeyName: "connections_profiles_recipient_fk"
             columns: ["recipient_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "connections_requester_id_fkey"
+            foreignKeyName: "connections_profiles_requester_fk"
             columns: ["requester_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -54,112 +54,86 @@ export type Database = {
       messages: {
         Row: {
           content: string
-          created_at: string
+          created_at: string | null
           id: string
           recipient_id: string
           sender_id: string
           source_language: string
           target_language: string
           translated_content: string | null
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           content: string
-          created_at?: string
+          created_at?: string | null
           id?: string
           recipient_id: string
           sender_id: string
-          source_language?: string
-          target_language?: string
+          source_language: string
+          target_language: string
           translated_content?: string | null
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           content?: string
-          created_at?: string
+          created_at?: string | null
           id?: string
           recipient_id?: string
           sender_id?: string
           source_language?: string
           target_language?: string
           translated_content?: string | null
-          updated_at?: string
+          updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "messages_recipient_id_fkey"
-            columns: ["recipient_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "messages_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       profiles: {
         Row: {
           avatar_url: string | null
-          created_at: string
+          created_at: string | null
           display_name: string
           id: string
-          updated_at: string
+          updated_at: string | null
           username: string
         }
         Insert: {
           avatar_url?: string | null
-          created_at?: string
+          created_at?: string | null
           display_name: string
           id: string
-          updated_at?: string
+          updated_at?: string | null
           username: string
         }
         Update: {
           avatar_url?: string | null
-          created_at?: string
+          created_at?: string | null
           display_name?: string
           id?: string
-          updated_at?: string
+          updated_at?: string | null
           username?: string
         }
         Relationships: []
       }
       user_preferences: {
         Row: {
-          created_at: string
-          id: string
+          created_at: string | null
           preferred_language: string
-          updated_at: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
-          created_at?: string
-          id?: string
+          created_at?: string | null
           preferred_language?: string
-          updated_at?: string
+          updated_at?: string | null
           user_id: string
         }
         Update: {
-          created_at?: string
-          id?: string
+          created_at?: string | null
           preferred_language?: string
-          updated_at?: string
+          updated_at?: string | null
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "user_preferences_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {

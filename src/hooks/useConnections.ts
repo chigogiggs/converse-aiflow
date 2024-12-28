@@ -18,7 +18,7 @@ export const useConnections = () => {
         .from('connections')
         .select(`
           *,
-          recipient:profiles!connections_recipient_id_fkey(*)
+          recipient:profiles!connections_profiles_recipient_fk(*)
         `)
         .eq('requester_id', user.id)
         .eq('status', 'accepted');
@@ -30,7 +30,7 @@ export const useConnections = () => {
         .from('connections')
         .select(`
           *,
-          requester:profiles!connections_requester_id_fkey(*)
+          profiles:profiles!connections_profiles_requester_fk(*)
         `)
         .eq('recipient_id', user.id)
         .eq('status', 'accepted');
@@ -38,23 +38,14 @@ export const useConnections = () => {
       if (recipientError) throw recipientError;
 
       // Combine both sets of accepted connections
-      const allConnections = [
-        ...(requesterConnections?.map(conn => ({
-          ...conn,
-          profiles: conn.recipient
-        })) || []),
-        ...(recipientConnections?.map(conn => ({
-          ...conn,
-          profiles: conn.requester
-        })) || [])
-      ];
+      const allConnections = [...(requesterConnections || []), ...(recipientConnections || [])];
 
       // Fetch pending received requests
       const { data: receivedData, error: receivedError } = await supabase
         .from('connections')
         .select(`
           *,
-          requester:profiles!connections_requester_id_fkey(*)
+          profiles:profiles!connections_profiles_requester_fk(*)
         `)
         .eq('recipient_id', user.id)
         .eq('status', 'pending');
@@ -66,22 +57,16 @@ export const useConnections = () => {
         .from('connections')
         .select(`
           *,
-          recipient:profiles!connections_recipient_id_fkey(*)
+          profiles:profiles!connections_profiles_recipient_fk(*)
         `)
         .eq('requester_id', user.id)
         .eq('status', 'pending');
 
       if (sentError) throw sentError;
 
-      setConnections(allConnections as Connection[]);
-      setPendingReceived(receivedData?.map(conn => ({
-        ...conn,
-        profiles: conn.requester
-      })) as Connection[]);
-      setPendingSent(sentData?.map(conn => ({
-        ...conn,
-        profiles: conn.recipient
-      })) as Connection[]);
+      setConnections(allConnections as Connection[] || []);
+      setPendingReceived(receivedData as Connection[] || []);
+      setPendingSent(sentData as Connection[] || []);
     } catch (error: any) {
       toast.error("Error fetching connections");
       console.error("Error fetching connections:", error);

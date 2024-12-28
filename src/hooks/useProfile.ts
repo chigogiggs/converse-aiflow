@@ -1,39 +1,55 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Profile } from '@/integrations/supabase/types/tables';
-import { toast } from 'sonner';
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
-export const useProfile = (userId: string | undefined) => {
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+export const useProfile = () => {
+  const createOrUpdateProfile = async (userId: string, avatarUrl: string) => {
+    try {
+      // First check if profile exists using proper query syntax
+      const { data: profile, error: fetchError } = await supabase
+        .from('profiles')
+        .select()
+        .eq('id', userId)
+        .maybeSingle();
 
-  useEffect(() => {
-    if (!userId) {
-      setLoading(false);
-      return;
-    }
-
-    const fetchProfile = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single();
-
-        if (error) throw error;
-        setProfile(data);
-      } catch (err: any) {
-        setError(err);
-        toast.error('Error loading profile');
-      } finally {
-        setLoading(false);
+      if (fetchError) {
+        console.error('Error fetching profile:', fetchError);
+        throw new Error('Failed to check existing profile');
       }
-    };
 
-    fetchProfile();
-  }, [userId]);
+      if (!profile) {
+        // Create new profile with required fields
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            avatar_url: avatarUrl,
+            username: userId.slice(0, 8), // Temporary username
+            display_name: 'New User' // Default display name
+          });
 
-  return { profile, loading, error };
+        if (insertError) {
+          console.error('Error creating profile:', insertError);
+          throw new Error('Failed to create new profile');
+        }
+      } else {
+        // Update existing profile's avatar
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ avatar_url: avatarUrl })
+          .eq('id', userId);
+
+        if (updateError) {
+          console.error('Error updating profile:', updateError);
+          throw new Error('Failed to update profile');
+        }
+      }
+
+      return true;
+    } catch (error: any) {
+      console.error('Profile operation failed:', error);
+      throw error;
+    }
+  };
+
+  return { createOrUpdateProfile };
 };
