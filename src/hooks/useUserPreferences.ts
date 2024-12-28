@@ -12,33 +12,17 @@ export const useUserPreferences = () => {
       if (!session?.user) return;
 
       try {
-        // Try to get existing preferences
-        const { data: preferences, error } = await supabase
-          .from('user_preferences')
+        const { data: profile, error } = await supabase
+          .from('profiles')
           .select('preferred_language')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
+          .eq('id', session.user.id)
+          .single();
 
         if (error) throw error;
 
-        // If no preferences exist, create default ones
-        if (!preferences) {
-          const { error: createError } = await supabase
-            .from('user_preferences')
-            .insert([
-              { 
-                user_id: session.user.id,
-                preferred_language: "en"
-              }
-            ]);
-
-          if (createError) throw createError;
-          
-          setOutgoingLanguage("en");
-          setIncomingLanguage("en");
-        } else {
-          setOutgoingLanguage(preferences.preferred_language);
-          setIncomingLanguage(preferences.preferred_language);
+        if (profile) {
+          setOutgoingLanguage(profile.preferred_language);
+          setIncomingLanguage(profile.preferred_language);
         }
       } catch (error: any) {
         console.error('Error loading preferences:', error);

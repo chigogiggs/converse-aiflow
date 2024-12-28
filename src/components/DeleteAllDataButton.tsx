@@ -14,7 +14,6 @@ export const DeleteAllDataButton = () => {
       // Delete all data from tables in correct order
       await supabase.from('messages').delete().neq('id', '0');
       await supabase.from('connections').delete().neq('id', '0');
-      await supabase.from('user_preferences').delete().neq('id', '0');
       await supabase.from('profiles').delete().neq('id', '0');
 
       // Delete all users from auth.users (this will cascade to profiles)

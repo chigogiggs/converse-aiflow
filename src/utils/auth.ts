@@ -17,27 +17,17 @@ export const createUserRecords = async (
   language: string
 ) => {
   try {
-    // Create profile record
     const { error: profileError } = await supabase
       .from('profiles')
       .insert({
         id: userId,
         username,
         display_name: username,
-        avatar_url: avatarUrl
+        avatar_url: avatarUrl,
+        preferred_language: language
       });
 
     if (profileError) throw profileError;
-
-    // Create user preferences record
-    const { error: prefError } = await supabase
-      .from('user_preferences')
-      .insert([{ 
-        user_id: userId, 
-        preferred_language: language 
-      }]);
-
-    if (prefError) throw prefError;
 
   } catch (error) {
     console.error('Error creating user records:', error);

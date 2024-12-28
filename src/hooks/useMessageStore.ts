@@ -26,15 +26,3 @@ export const saveMessage = async (
   if (saveError) throw saveError;
   return savedMessage;
 };
-
-export const updateUserPreferences = async (userId: string, language: string) => {
-  const { error: updateError } = await supabase
-    .from('user_preferences')
-    .upsert({ 
-      user_id: userId,
-      has_sent_first_message: true,
-      preferred_language: language
-    });
-
-  if (updateError) throw updateError;
-};
