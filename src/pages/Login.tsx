@@ -1,148 +1,59 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { SignupHeader } from "@/components/SignupHeader";
+import { LoginForm } from "@/components/LoginForm";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Logo } from "@/components/Logo";
+import { toast } from "@/hooks/use-toast";
 
-const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+export const Login = () => {
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const validateForm = () => {
-    if (!email || !email.includes('@')) {
-      toast({
-        title: "Invalid email",
-        description: "Please enter a valid email address",
-        variant: "destructive",
-      });
-      return false;
-    }
-    if (!password || password.length < 6) {
-      toast({
-        title: "Invalid password",
-        description: "Password must be at least 6 characters long",
-        variant: "destructive",
-      });
-      return false;
-    }
-    return true;
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-
+  const handleDeleteAllUsers = async () => {
     try {
-      setIsLoading(true);
+      setIsDeleting(true);
+      const { data: { users }, error: fetchError } = await supabase.auth.admin.listUsers();
+      
+      if (fetchError) throw fetchError;
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        let errorMessage = "An unexpected error occurred. Please try again.";
-        
-        // Handle specific error cases
-        if (error.message.includes("Invalid login credentials")) {
-          errorMessage = "Invalid email or password. Please check your credentials and try again.";
-        } else if (error.message.includes("Email not confirmed")) {
-          errorMessage = "Please verify your email address before logging in.";
+      // Delete each user
+      for (const user of users || []) {
+        const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
+        if (deleteError) {
+          console.error(`Error deleting user ${user.id}:`, deleteError);
+          throw deleteError;
         }
-
-        toast({
-          title: "Login failed",
-          description: errorMessage,
-          variant: "destructive",
-        });
-        return;
       }
 
-      if (data.user) {
-        toast({
-          title: "Welcome back!",
-          description: "Logged in successfully",
-        });
-        navigate("/home");
-      }
+      toast({
+        title: "Success",
+        description: "All users have been deleted",
+      });
     } catch (error: any) {
+      console.error("Error deleting users:", error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred. Please try again.",
+        description: error.message,
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsDeleting(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-tr from-blue-50 to-indigo-50 px-4">
-      <div className="w-full max-w-md">
-        <div className="flex justify-center mb-8">
-          <Logo />
-        </div>
-        <div className="text-center mb-8">
-          <p className="text-gray-600">Welcome back! Please sign in to continue.</p>
-        </div>
-        
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8">
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full"
-                placeholder="Enter your email"
-                required
-                disabled={isLoading}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full"
-                placeholder="Enter your password"
-                required
-                disabled={isLoading}
-              />
-            </div>
-            <Button 
-              type="submit" 
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? "Signing in..." : "Sign In"}
-            </Button>
-          </form>
-          
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Don't have an account?{" "}
-              <button
-                type="button"
-                onClick={() => navigate("/signup")}
-                className="text-indigo-600 hover:text-indigo-700 font-medium"
-                disabled={isLoading}
-              >
-                Sign up
-              </button>
-            </p>
-          </div>
-        </div>
+    <div className="min-h-screen bg-gradient-to-b from-indigo-100 to-white flex flex-col">
+      <SignupHeader />
+      <div className="flex-1 flex flex-col items-center justify-center px-4">
+        <LoginForm />
+        <Button 
+          variant="destructive"
+          className="mt-8"
+          onClick={handleDeleteAllUsers}
+          disabled={isDeleting}
+        >
+          {isDeleting ? "Deleting Users..." : "Delete All Users"}
+        </Button>
       </div>
     </div>
   );
 };
-
-export default Login;
