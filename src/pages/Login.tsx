@@ -46,19 +46,20 @@ const Login = () => {
       });
 
       if (error) {
-        if (error.message === "Invalid login credentials") {
-          toast({
-            title: "Login failed",
-            description: "Invalid email or password. Please try again.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Login error",
-            description: error.message,
-            variant: "destructive",
-          });
+        let errorMessage = "An unexpected error occurred. Please try again.";
+        
+        // Handle specific error cases
+        if (error.message.includes("Invalid login credentials")) {
+          errorMessage = "Invalid email or password. Please check your credentials and try again.";
+        } else if (error.message.includes("Email not confirmed")) {
+          errorMessage = "Please verify your email address before logging in.";
         }
+
+        toast({
+          title: "Login failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
         return;
       }
 
