@@ -76,8 +76,8 @@ export const ChatMessage = ({
                 className={cn(
                   "relative p-3 rounded-lg cursor-pointer group neo-blur",
                   isOutgoing
-                    ? "bg-primary/20 text-primary-foreground rounded-br-none"
-                    : "bg-secondary/20 text-secondary-foreground rounded-bl-none"
+                    ? "bg-primary/20 text-white rounded-br-none"
+                    : "bg-secondary/20 text-white rounded-bl-none"
                 )}
                 onClick={toggleOriginal}
                 whileHover={{ scale: 1.02 }}
@@ -124,7 +124,7 @@ export const ChatMessage = ({
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-        <span className="text-xs text-muted-foreground leading-none mt-1 block">{timestamp}</span>
+        <span className="text-xs text-white/70 leading-none mt-1 block">{timestamp}</span>
       </div>
     </div>
   );

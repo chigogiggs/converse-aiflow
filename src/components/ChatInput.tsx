@@ -75,7 +75,7 @@ export const ChatInput = ({
   }, [typingTimeout]);
 
   return (
-    <form onSubmit={handleSubmit} className="flex items-end gap-2 w-full bg-white p-4 rounded-lg shadow-sm">
+    <form onSubmit={handleSubmit} className="flex items-end gap-2 w-full max-w-5xl mx-auto bg-white p-4 rounded-lg shadow-sm">
       <input
         type="file"
         ref={fileInputRef}

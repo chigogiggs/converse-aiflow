@@ -28,8 +28,8 @@ export const UserAvatar = ({
 
   return (
     <div className="relative">
-      <Avatar className={sizeClasses[size]}>
-        <AvatarImage src={src} />
+      <Avatar className={`${sizeClasses[size]} aspect-square`}>
+        <AvatarImage src={src} className="object-cover" />
         <AvatarFallback>{fallback}</AvatarFallback>
       </Avatar>
       
