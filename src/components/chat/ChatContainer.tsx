@@ -10,29 +10,10 @@ import { useSearchParams, Link } from "react-router-dom";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 
 export const ChatContainer = () => {
   const [searchParams] = useSearchParams();
   const recipientId = searchParams.get('recipient');
-  
-  // Use useQuery to fetch recipient profile
-  const { data: recipientProfile } = useQuery({
-    queryKey: ['profile', recipientId],
-    queryFn: async () => {
-      if (!recipientId) return null;
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', recipientId)
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!recipientId
-  });
   
   if (!recipientId) {
     return (
@@ -72,15 +53,11 @@ export const ChatContainer = () => {
 
   const handleTranslateAll = () => {
     // Implementation for translating all messages
-    // This would trigger a re-render of messages with translations
   };
 
   return (
     <div className="flex flex-col h-[calc(100vh-theme(spacing.16))] md:h-[calc(100vh-theme(spacing.32))] bg-white rounded-lg shadow-lg overflow-hidden">
-      <ChatHeader
-        recipientName={recipientProfile?.display_name || "Chat"}
-        recipientAvatar={recipientProfile?.avatar_url}
-      />
+      <ChatHeader recipientId={recipientId} />
       
       <PinnedMessages messages={messages} pinnedMessages={pinnedMessages} />
 
