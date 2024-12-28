@@ -38,7 +38,8 @@ export const ConnectionItem = ({
         .select('*', { count: 'exact', head: true })
         .eq('sender_id', connection.id)
         .eq('recipient_id', user.id)
-        .eq('read', false);
+        .eq('read', false)
+        .is('is_deleted', false); // Only count non-deleted messages
 
       if (error) {
         console.error('Error fetching unread count:', error);
