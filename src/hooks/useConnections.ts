@@ -37,14 +37,14 @@ export const useConnections = () => {
 
       if (recipientError) throw recipientError;
 
-      // Combine both sets of accepted connections
+      // Combine both sets of accepted connections with proper type assertions
       const allConnections = [
         ...(requesterConnections || []).map(conn => ({
           ...conn,
           profiles: conn.recipient
         })),
         ...(recipientConnections || [])
-      ] as Connection[];
+      ].filter(conn => conn.profiles) as Connection[];
 
       // Fetch pending received requests
       const { data: receivedData, error: receivedError } = await supabase
@@ -71,8 +71,8 @@ export const useConnections = () => {
       if (sentError) throw sentError;
 
       setConnections(allConnections);
-      setPendingReceived(receivedData as Connection[] || []);
-      setPendingSent(sentData as Connection[] || []);
+      setPendingReceived((receivedData || []).filter(conn => conn.profiles) as Connection[]);
+      setPendingSent((sentData || []).filter(conn => conn.profiles) as Connection[]);
     } catch (error: any) {
       toast.error("Error fetching connections");
       console.error("Error fetching connections:", error);
