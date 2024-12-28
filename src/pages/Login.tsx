@@ -1,7 +1,11 @@
 import { SignInForm } from "@/components/SignInForm";
 import { Logo } from "@/components/Logo";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="container relative min-h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
       <div className="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex dark:border-r">
@@ -44,6 +48,18 @@ const Login = () => {
             </p>
           </div>
           <SignInForm />
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">
+              Don't have an account?{" "}
+              <Button
+                variant="link"
+                className="font-semibold text-primary"
+                onClick={() => navigate("/signup")}
+              >
+                Sign up
+              </Button>
+            </p>
+          </div>
         </div>
       </div>
     </div>
