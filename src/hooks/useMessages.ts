@@ -116,6 +116,17 @@ export const useMessages = (recipientId: string) => {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error("User not authenticated");
 
+      // Get user preferences to check first message status
+      const { data: preferences, error: prefError } = await supabase
+        .from('user_preferences')
+        .select('has_sent_first_message')
+        .eq('user_id', user.user.id)
+        .single();
+
+      if (prefError) throw prefError;
+
+      const isFirstMessage = !preferences?.has_sent_first_message;
+
       const { data: savedMessage, error: saveError } = await supabase
         .from('messages')
         .insert([{
@@ -131,6 +142,21 @@ export const useMessages = (recipientId: string) => {
 
       if (saveError) throw saveError;
 
+      // Update user preferences if this was their first message
+      if (isFirstMessage) {
+        const { error: updateError } = await supabase
+          .from('user_preferences')
+          .update({ has_sent_first_message: true })
+          .eq('user_id', user.user.id);
+
+        if (updateError) throw updateError;
+
+        toast({
+          title: "Message sent",
+          description: "Your message has been translated and sent",
+        });
+      }
+
       setMessages(prev => prev.map(msg => 
         msg.id === newMessage.id 
           ? { 
@@ -142,10 +168,6 @@ export const useMessages = (recipientId: string) => {
           : msg
       ));
 
-      toast({
-        title: "Message sent",
-        description: "Your message has been translated and sent",
-      });
     } catch (error: any) {
       console.error("Error sending message:", error);
       

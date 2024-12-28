@@ -135,6 +135,7 @@ export type Database = {
       user_preferences: {
         Row: {
           created_at: string
+          has_sent_first_message: boolean | null
           id: string
           preferred_language: string
           updated_at: string
@@ -142,6 +143,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          has_sent_first_message?: boolean | null
           id?: string
           preferred_language?: string
           updated_at?: string
@@ -149,6 +151,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          has_sent_first_message?: boolean | null
           id?: string
           preferred_language?: string
           updated_at?: string
