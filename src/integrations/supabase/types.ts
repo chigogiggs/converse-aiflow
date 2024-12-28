@@ -62,6 +62,7 @@ export type Database = {
           source_language: string
           target_language: string
           translated_content: string | null
+          translations: Json | null
           updated_at: string
         }
         Insert: {
@@ -74,6 +75,7 @@ export type Database = {
           source_language?: string
           target_language?: string
           translated_content?: string | null
+          translations?: Json | null
           updated_at?: string
         }
         Update: {
@@ -86,6 +88,7 @@ export type Database = {
           source_language?: string
           target_language?: string
           translated_content?: string | null
+          translations?: Json | null
           updated_at?: string
         }
         Relationships: [

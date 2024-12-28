@@ -2,19 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { RealtimeChannel } from "@supabase/supabase-js";
-
-export interface Message {
-  id: string;
-  text: string;
-  isOutgoing: boolean;
-  timestamp: string;
-  isTranslating?: boolean;
-  originalText?: string;
-  isPinned?: boolean;
-  isEdited?: boolean;
-  senderId?: string;
-  translations?: Record<string, string>;
-}
+import { Message, DatabaseMessage } from "@/types/message.types";
+import { formatDatabaseMessage, getMessageLanguageContent } from "@/utils/messageUtils";
 
 export const useMessages = (recipientId: string) => {
   const { toast } = useToast();
@@ -42,15 +31,9 @@ export const useMessages = (recipientId: string) => {
 
         if (error) throw error;
 
-        const formattedMessages = data.map(msg => ({
-          id: msg.id,
-          text: msg.translations?.[recipientProfile?.preferred_language?.toLowerCase() || 'english'] || msg.content,
-          originalText: msg.content,
-          isOutgoing: msg.sender_id === user.id,
-          timestamp: new Date(msg.created_at).toLocaleTimeString(),
-          senderId: msg.sender_id,
-          translations: msg.translations
-        }));
+        const formattedMessages = (data as DatabaseMessage[]).map(msg => 
+          formatDatabaseMessage(msg, user.id, recipientProfile?.preferred_language)
+        );
 
         setMessages(formattedMessages);
       } catch (error: any) {
@@ -85,7 +68,7 @@ export const useMessages = (recipientId: string) => {
             if (!user) return;
 
             if (payload.eventType === 'INSERT') {
-              const newMessage = payload.new;
+              const newMessage = payload.new as DatabaseMessage;
               const { data: recipientProfile } = await supabase
                 .from('profiles')
                 .select('preferred_language')
@@ -93,15 +76,9 @@ export const useMessages = (recipientId: string) => {
                 .single();
 
               if (newMessage.sender_id !== user.id) {
-                setMessages(prev => [...prev, {
-                  id: newMessage.id,
-                  text: newMessage.translations?.[recipientProfile?.preferred_language?.toLowerCase() || 'english'] || newMessage.content,
-                  originalText: newMessage.content,
-                  isOutgoing: newMessage.sender_id === user.id,
-                  timestamp: new Date(newMessage.created_at).toLocaleTimeString(),
-                  senderId: newMessage.sender_id,
-                  translations: newMessage.translations
-                }]);
+                setMessages(prev => [...prev, 
+                  formatDatabaseMessage(newMessage, user.id, recipientProfile?.preferred_language)
+                ]);
               }
             }
           }
@@ -135,7 +112,6 @@ export const useMessages = (recipientId: string) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // Get translations for all supported languages
       const { data: translationsResponse } = await supabase.functions.invoke('translate-message', {
         body: { text }
       });
@@ -144,13 +120,8 @@ export const useMessages = (recipientId: string) => {
         throw new Error("Failed to get translations");
       }
 
-      // Convert language names to lowercase for consistency
-      const translations = Object.entries(translationsResponse.translations).reduce((acc, [key, value]) => {
-        acc[key.toLowerCase()] = value;
-        return acc;
-      }, {} as Record<string, string>);
+      const translations = translationsResponse.translations as Record<string, string>;
 
-      // Save message with all translations
       const { data: savedMessage, error: saveError } = await supabase
         .from('messages')
         .insert([{
@@ -166,12 +137,7 @@ export const useMessages = (recipientId: string) => {
 
       setMessages(prev => prev.map(msg => 
         msg.id === newMessage.id 
-          ? { 
-              ...msg, 
-              id: savedMessage.id,
-              translations,
-              isTranslating: false 
-            }
+          ? formatDatabaseMessage(savedMessage as DatabaseMessage, user.id)
           : msg
       ));
 
@@ -197,7 +163,7 @@ export const useMessages = (recipientId: string) => {
       
       return {
         ...msg,
-        text: msg.translations?.[language.toLowerCase()] || msg.text
+        text: getMessageLanguageContent(msg, language)
       };
     }));
   };
