@@ -59,12 +59,10 @@ export const useMessages = (recipientId: string) => {
 
     fetchMessages();
 
-    // Cleanup previous subscription if it exists
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
     }
 
-    // Create new subscription
     const channel = supabase
       .channel('messages')
       .on(
@@ -126,25 +124,39 @@ export const useMessages = (recipientId: string) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
+      // Get recipient preferences with maybeSingle()
       const { data: recipientPrefs, error: prefsError } = await supabase
         .from('user_preferences')
         .select('preferred_language')
         .eq('user_id', recipientId)
-        .single();
+        .maybeSingle();
 
-      if (prefsError) throw prefsError;
+      if (prefsError) {
+        console.error("Error fetching recipient preferences:", prefsError);
+        // Create default preferences if none exist
+        await supabase
+          .from('user_preferences')
+          .insert([
+            { 
+              user_id: recipientId,
+              preferred_language: 'en'
+            }
+          ]);
+      }
 
-      const { translatedText, targetLanguage } = await translateMessage(text, recipientId);
+      const targetLanguage = recipientPrefs?.preferred_language || 'en';
+      const { translatedText } = await translateMessage(text, recipientId);
 
       const savedMessage = await saveMessage(
         text,
         translatedText,
         outgoingLanguage,
-        recipientPrefs.preferred_language,
+        targetLanguage,
         user.id,
         recipientId
       );
 
+      // Check if user has sent their first message
       const { data: preferences } = await supabase
         .from('user_preferences')
         .select('has_sent_first_message')
