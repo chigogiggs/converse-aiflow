@@ -15,7 +15,7 @@ export const translateMessage = async (
       };
     }
 
-    // Try to get existing preferences
+    // Try to get existing preferences using maybeSingle()
     const { data: preferences, error: prefsError } = await supabase
       .from('user_preferences')
       .select('preferred_language')
@@ -33,50 +33,30 @@ export const translateMessage = async (
     // If no preferences exist, create default ones
     if (!preferences) {
       try {
-        const { data: newPrefs, error: createError } = await supabase
+        const { error: createError } = await supabase
           .from('user_preferences')
           .insert([
             { 
               user_id: recipientId,
               preferred_language: 'en' // Default to English
             }
-          ])
-          .select()
-          .single();
+          ]);
 
-        if (createError) throw createError;
+        if (createError) {
+          console.error('Error creating preferences:', createError);
+          return {
+            translatedText: text,
+            targetLanguage: 'en'
+          };
+        }
 
-        // Get full language name for better translation
-        const languageMap: { [key: string]: string } = {
-          'en': 'English',
-          'es': 'Spanish',
-          'fr': 'French',
-          'de': 'German',
-          'it': 'Italian',
-          'pt': 'Portuguese',
-          'ru': 'Russian',
-          'zh': 'Chinese',
-          'ja': 'Japanese',
-          'ko': 'Korean',
-          'tr': 'Turkish'
-        };
-
-        // Translate using Edge Function
-        const { data: translatedMessage, error: translateError } = await supabase.functions.invoke('translate-message', {
-          body: { 
-            text,
-            targetLanguage: 'English' // Default for new users
-          }
-        });
-
-        if (translateError) throw translateError;
-
+        // For new users, return original text with default language
         return {
-          translatedText: translatedMessage.translatedText,
+          translatedText: text,
           targetLanguage: 'en'
         };
       } catch (error) {
-        console.error('Error creating preferences:', error);
+        console.error('Error in preference creation:', error);
         return {
           translatedText: text,
           targetLanguage: 'en'
@@ -102,16 +82,16 @@ export const translateMessage = async (
     const targetLanguage = preferences.preferred_language;
     const fullLanguageName = languageMap[targetLanguage] || 'English';
 
-    // Translate the message using Edge Function
+    // Translate using Edge Function
     try {
-      const { data: translatedMessage, error } = await supabase.functions.invoke('translate-message', {
+      const { data: translatedMessage, error: translateError } = await supabase.functions.invoke('translate-message', {
         body: { 
           text,
           targetLanguage: fullLanguageName
         }
       });
 
-      if (error) throw error;
+      if (translateError) throw translateError;
 
       return {
         translatedText: translatedMessage.translatedText,
@@ -126,7 +106,6 @@ export const translateMessage = async (
     }
   } catch (error) {
     console.error('General error:', error);
-    // Return original text if anything fails
     return {
       translatedText: text,
       targetLanguage: 'en'
