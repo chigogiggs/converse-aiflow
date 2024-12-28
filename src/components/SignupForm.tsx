@@ -20,35 +20,9 @@ export const SignupForm = () => {
   const [avatarUrl, setAvatarUrl] = useState("");
   const navigate = useNavigate();
 
-  const slides = [
-    <EmailPasswordSlide
-      key="email-password"
-      email={email}
-      password={password}
-      onEmailChange={setEmail}
-      onPasswordChange={setPassword}
-    />,
-    <UsernameSlide
-      key="username"
-      username={username}
-      onUsernameChange={setUsername}
-    />,
-    <ProfilePictureSlide
-      key="profile-picture"
-      avatarUrl={avatarUrl}
-      username={username}
-      onAvatarChange={setAvatarUrl}
-    />,
-    <LanguageSlide
-      key="language"
-      language={language}
-      onLanguageChange={setLanguage}
-    />
-  ];
-
   const handleSignup = async () => {
     try {
-      // First check if username exists using maybeSingle instead of single
+      // First check if username exists
       const { data: existingUser, error: usernameError } = await supabase
         .from("profiles")
         .select("username")
@@ -69,23 +43,7 @@ export const SignupForm = () => {
         return;
       }
 
-      // Try to sign in first to check if the account exists
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (signInData?.user) {
-        toast({
-          title: "Account Already Exists",
-          description: "This email is already registered. Redirecting to login...",
-          variant: "destructive",
-        });
-        navigate("/login");
-        return;
-      }
-
-      // If we get here, the account doesn't exist, so proceed with signup
+      // Try to sign up
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
