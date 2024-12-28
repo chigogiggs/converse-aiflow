@@ -1,9 +1,10 @@
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { useEffect, useRef, useState } from "react";
 import { Message } from "@/types/message.types";
 import { useMessages } from "@/hooks/useMessages";
-import { useEffect, useRef, useState } from "react";
-import { MessageContent } from "./message/MessageContent";
 import { supabase } from "@/integrations/supabase/client";
+import { MessageContent } from "./message/MessageContent";
+import { MessageReadHandler } from "./message/MessageReadHandler";
+import { ScrollableMessageArea } from "./message/ScrollableMessageArea";
 
 interface MessageListProps {
   messages: Message[];
@@ -47,34 +48,6 @@ export const MessageList = ({
     loadPreferredLanguage();
   }, []);
 
-  // Mark messages as read when they are displayed
-  useEffect(() => {
-    const markMessagesAsRead = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Get all unread message IDs from the current sender
-      const unreadMessageIds = messages
-        .filter(msg => !msg.isOutgoing && !msg.read)
-        .map(msg => msg.id);
-
-      if (unreadMessageIds.length === 0) return;
-
-      // Update messages as read
-      const { error } = await supabase
-        .from('messages')
-        .update({ read: true })
-        .in('id', unreadMessageIds)
-        .eq('recipient_id', user.id);
-
-      if (error) {
-        console.error('Error marking messages as read:', error);
-      }
-    };
-
-    markMessagesAsRead();
-  }, [messages]);
-
   useEffect(() => {
     const fetchRepliedMessages = async () => {
       const repliedIds = messages
@@ -112,10 +85,8 @@ export const MessageList = ({
 
   return (
     <div className="relative flex-1 h-[calc(100vh-16rem)] bg-gray-900">
-      <ScrollArea 
-        className="h-full px-4 py-2" 
-        ref={scrollRef}
-      >
+      <MessageReadHandler messages={messages} />
+      <ScrollableMessageArea ref={scrollRef}>
         <MessageContent 
           messages={messages}
           isTyping={isTyping}
@@ -123,7 +94,7 @@ export const MessageList = ({
           repliedMessages={repliedMessages}
           onReply={onReply}
         />
-      </ScrollArea>
+      </ScrollableMessageArea>
     </div>
   );
 };
