@@ -19,6 +19,7 @@ export interface Message {
 export const useMessages = (recipientId: string) => {
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -45,6 +46,7 @@ export const useMessages = (recipientId: string) => {
         }));
 
         setMessages(formattedMessages);
+        setIsInitialLoad(false);
       } catch (error: any) {
         console.error('Error fetching messages:', error);
         toast({
@@ -57,6 +59,7 @@ export const useMessages = (recipientId: string) => {
 
     fetchMessages();
 
+    // Only subscribe to real-time updates after initial load
     const channel = supabase
       .channel('messages')
       .on(
@@ -69,18 +72,21 @@ export const useMessages = (recipientId: string) => {
         },
         async (payload) => {
           const { data: { user } } = await supabase.auth.getUser();
-          if (!user) return;
+          if (!user || isInitialLoad) return;
 
           if (payload.eventType === 'INSERT') {
             const newMessage = payload.new;
-            setMessages(prev => [...prev, {
-              id: newMessage.id,
-              text: newMessage.translated_content || newMessage.content,
-              originalText: newMessage.translated_content ? newMessage.content : undefined,
-              isOutgoing: newMessage.sender_id === user.id,
-              timestamp: new Date(newMessage.created_at).toLocaleTimeString(),
-              senderId: newMessage.sender_id
-            }]);
+            // Only add the message if it's not from the current user
+            if (newMessage.sender_id !== user.id) {
+              setMessages(prev => [...prev, {
+                id: newMessage.id,
+                text: newMessage.translated_content || newMessage.content,
+                originalText: newMessage.translated_content ? newMessage.content : undefined,
+                isOutgoing: newMessage.sender_id === user.id,
+                timestamp: new Date(newMessage.created_at).toLocaleTimeString(),
+                senderId: newMessage.sender_id
+              }]);
+            }
           }
         }
       )
@@ -89,7 +95,7 @@ export const useMessages = (recipientId: string) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [recipientId, toast]);
+  }, [recipientId, toast, isInitialLoad]);
 
   const sendMessage = async (
     text: string,
@@ -106,21 +112,31 @@ export const useMessages = (recipientId: string) => {
       isTranslating: true,
     };
 
+    // Add message to local state immediately
     setMessages(prev => [...prev, newMessage]);
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // Translate the message
+      // Get recipient's preferred language
+      const { data: recipientPrefs, error: prefsError } = await supabase
+        .from('user_preferences')
+        .select('preferred_language')
+        .eq('user_id', recipientId)
+        .single();
+
+      if (prefsError) throw prefsError;
+
+      // Translate the message to recipient's preferred language
       const { translatedText, targetLanguage } = await translateMessage(text, recipientId);
 
-      // Save the message
+      // Save the message with correct target language
       const savedMessage = await saveMessage(
         text,
         translatedText,
         outgoingLanguage,
-        targetLanguage,
+        recipientPrefs.preferred_language, // Use recipient's preferred language
         user.id,
         recipientId
       );
@@ -141,6 +157,7 @@ export const useMessages = (recipientId: string) => {
         msg.id === newMessage.id 
           ? { 
               ...msg, 
+              id: savedMessage.id, // Update with the real ID from the database
               text: translatedText,
               originalText: text,
               isTranslating: false 
@@ -157,6 +174,7 @@ export const useMessages = (recipientId: string) => {
         variant: "destructive",
       });
 
+      // Remove the optimistically added message on error
       setMessages(prev => prev.filter(msg => msg.id !== newMessage.id));
     }
   };
