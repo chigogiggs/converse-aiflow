@@ -41,13 +41,16 @@ export const LanguageDropdown = ({ recipientId }: LanguageDropdownProps) => {
   }, []);
 
   const handleLanguageChange = async (languageCode: string) => {
-    setSelectedLanguage(languageCode); // Update UI immediately
+    setSelectedLanguage(languageCode);
+    toast({
+      description: "Translating...",
+      duration: 2000,
+    });
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // Update profile
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ preferred_language: languageCode })
@@ -55,55 +58,19 @@ export const LanguageDropdown = ({ recipientId }: LanguageDropdownProps) => {
 
       if (updateError) throw updateError;
 
-      // Update messages if in chat
       if (location.pathname === '/chat' && recipientId) {
         await updateMessagesLanguage(languageCode);
       }
-
-      toast({
-        title: "Language updated",
-        description: "Messages will now be displayed in the selected language.",
-        duration: 2000,
-      });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Translation error:', error);
-      setSelectedLanguage(selectedLanguage); // Revert UI on error
+      setSelectedLanguage(selectedLanguage);
       toast({
-        title: "Update failed",
-        description: "There was an error updating the messages language.",
+        description: "Translation failed",
         variant: "destructive",
         duration: 2000,
       });
     }
   };
-
-  // Subscribe to profile changes
-  useEffect(() => {
-    const channel = supabase
-      .channel('profile_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'profiles',
-        },
-        async (payload: any) => {
-          const newLanguage = payload.new.preferred_language;
-          if (newLanguage && location.pathname === '/chat') {
-            setSelectedLanguage(newLanguage);
-            if (recipientId) {
-              await updateMessagesLanguage(newLanguage);
-            }
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [recipientId, location.pathname, updateMessagesLanguage]);
 
   return (
     <DropdownMenu>

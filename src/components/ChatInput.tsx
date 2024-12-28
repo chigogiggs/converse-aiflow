@@ -1,11 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect, useRef } from "react";
-import { Mic, Send, Image as ImageIcon, Smile } from "lucide-react";
+import { Send } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import data from '@emoji-mart/data'
-import Picker from '@emoji-mart/react'
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { ChatInputActions } from "./chat/input/ChatInputActions";
+import { EmojiPicker } from "./chat/input/EmojiPicker";
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -116,53 +115,21 @@ export const ChatInput = ({
           accept="image/*"
           className="hidden"
         />
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="rounded-full hover:bg-gray-100"
-            onClick={handleImageClick}
-          >
-            <ImageIcon className="h-5 w-5 text-gray-600" />
-          </Button>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="rounded-full hover:bg-gray-100"
-              >
-                <Smile className="h-5 w-5 text-gray-600" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-full p-0 border-none" align="end">
-              <Picker
-                data={data}
-                onEmojiSelect={handleEmojiSelect}
-                theme="dark"
-              />
-            </PopoverContent>
-          </Popover>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="rounded-full hover:bg-gray-100"
-            onClick={onVoiceMessage}
-          >
-            <Mic className="h-5 w-5 text-gray-600" />
-          </Button>
-        </div>
-        <Textarea
-          value={message}
-          onChange={handleChange}
-          onKeyDown={handleKeyPress}
-          placeholder="Type your message..."
-          className="flex-1 min-h-[50px] max-h-[150px] resize-none focus-visible:ring-1 focus-visible:ring-indigo-500 border-gray-200"
-          enterKeyHint={isMobile ? "enter" : "send"}
+        <ChatInputActions
+          onImageClick={handleImageClick}
+          onVoiceMessage={onVoiceMessage}
         />
+        <div className="relative flex-1">
+          <Textarea
+            value={message}
+            onChange={handleChange}
+            onKeyDown={handleKeyPress}
+            placeholder="Type your message..."
+            className="min-h-[50px] max-h-[150px] resize-none focus-visible:ring-1 focus-visible:ring-indigo-500 border-gray-200 pr-10"
+            enterKeyHint={isMobile ? "enter" : "send"}
+          />
+          <EmojiPicker onEmojiSelect={handleEmojiSelect} />
+        </div>
         <Button 
           type="submit" 
           className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-full px-4 py-2 flex items-center justify-center"

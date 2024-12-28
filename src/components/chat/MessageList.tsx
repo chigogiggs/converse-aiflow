@@ -1,18 +1,11 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChatMessage } from "@/components/ChatMessage";
-import { Smile } from "lucide-react";
 import { Message } from "@/types/message.types";
 import { useMessages } from "@/hooks/useMessages";
-import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
-import { MessageSearch } from "./message/MessageSearch";
+import { useEffect, useRef } from "react";
 import { MessageContent } from "./message/MessageContent";
 
 interface MessageListProps {
   messages: Message[];
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
   isTyping: boolean;
   outgoingLanguage?: string;
   onTranslateAll?: () => void;
@@ -23,8 +16,6 @@ interface MessageListProps {
 
 export const MessageList = ({
   messages,
-  searchQuery,
-  setSearchQuery,
   isTyping,
   outgoingLanguage = 'en',
   onTranslateAll,
@@ -32,11 +23,9 @@ export const MessageList = ({
   onReply,
   replyingTo
 }: MessageListProps) => {
-  const [showSearch, setShowSearch] = useState(false);
   const { updateMessagesLanguage } = useMessages(recipientId);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [repliedMessages, setRepliedMessages] = useState<Record<string, any>>({});
-  const lastScrollTop = useRef(0);
 
   useEffect(() => {
     const loadPreferredLanguage = async () => {
@@ -92,31 +81,14 @@ export const MessageList = ({
     fetchRepliedMessages();
   }, [messages]);
 
-  const handleScroll = (e: any) => {
-    const currentScrollTop = e.target.scrollTop;
-    setShowSearch(currentScrollTop < lastScrollTop.current);
-    lastScrollTop.current = currentScrollTop;
-  };
-
   return (
     <div className="relative flex-1 h-[calc(100vh-16rem)] bg-gray-900">
-      <AnimatePresence>
-        {showSearch && (
-          <MessageSearch 
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-          />
-        )}
-      </AnimatePresence>
-      
       <ScrollArea 
         className="h-full px-4 py-2" 
-        onScrollCapture={handleScroll}
         ref={scrollRef}
       >
         <MessageContent 
           messages={messages}
-          searchQuery={searchQuery}
           isTyping={isTyping}
           outgoingLanguage={outgoingLanguage}
           repliedMessages={repliedMessages}
