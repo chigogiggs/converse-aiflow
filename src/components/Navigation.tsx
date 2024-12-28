@@ -68,15 +68,25 @@ export const Navigation = () => {
   };
 
   const handleLanguageChange = async (languageCode: string) => {
-    if (!recipientId || !messages.length) return;
-
     const loadingToast = toast({
       title: "Updating messages language",
       description: "Please wait while we update the messages...",
     });
 
     try {
-      await updateMessagesLanguage(languageCode);
+      // Update user's preferred language in the database
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      await supabase
+        .from('profiles')
+        .update({ preferred_language: languageCode })
+        .eq('id', user.id);
+
+      // Update messages if we're in the chat route
+      if (location.pathname === '/chat' && recipientId) {
+        await updateMessagesLanguage(languageCode);
+      }
 
       toast({
         title: "Language updated",
@@ -129,30 +139,28 @@ export const Navigation = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          {!isHomePage && recipientId && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-[#C8C8C9] hover:bg-[#403E43] hover:text-[#7E69AB]"
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-[#C8C8C9] hover:bg-[#403E43] hover:text-[#7E69AB]"
+              >
+                <Languages className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48 bg-[#1A1F2C] border-[#7E69AB]/20">
+              {languages.map((lang) => (
+                <DropdownMenuItem
+                  key={lang.code}
+                  onClick={() => handleLanguageChange(lang.code)}
+                  className="text-[#C8C8C9] hover:bg-[#403E43] hover:text-[#7E69AB] cursor-pointer"
                 >
-                  <Languages className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 bg-[#1A1F2C] border-[#7E69AB]/20">
-                {languages.map((lang) => (
-                  <DropdownMenuItem
-                    key={lang.code}
-                    onClick={() => handleLanguageChange(lang.code)}
-                    className="text-[#C8C8C9] hover:bg-[#403E43] hover:text-[#7E69AB] cursor-pointer"
-                  >
-                    {lang.name}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+                  {lang.name}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {isHomePage && (
             <Button

@@ -1,12 +1,10 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatMessage } from "@/components/ChatMessage";
-import { Smile, Languages } from "lucide-react";
+import { Smile } from "lucide-react";
 import { Message } from "@/types/message.types";
 import { useMessages } from "@/hooks/useMessages";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { LanguageSelector } from "@/components/LanguageSelector";
 import { supabase } from "@/integrations/supabase/client";
 import { getMessageLanguageContent } from "@/utils/messageUtils";
 
@@ -30,7 +28,6 @@ export const MessageList = ({
   recipientId
 }: MessageListProps) => {
   const [showSearch, setShowSearch] = useState(false);
-  const [displayLanguage, setDisplayLanguage] = useState("en");
   const { updateMessagesLanguage } = useMessages(recipientId);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -46,7 +43,6 @@ export const MessageList = ({
         .single();
 
       if (profile?.preferred_language) {
-        setDisplayLanguage(profile.preferred_language);
         await updateMessagesLanguage(profile.preferred_language);
       }
     };
@@ -79,11 +75,6 @@ export const MessageList = ({
     }
   }, [messages]);
 
-  const handleLanguageChange = async (newLanguage: string) => {
-    setDisplayLanguage(newLanguage);
-    await updateMessagesLanguage(newLanguage);
-  };
-
   const handleScroll = (e: any) => {
     if (e.target.scrollTop > 100) {
       setShowSearch(true);
@@ -115,14 +106,6 @@ export const MessageList = ({
         )}
       </AnimatePresence>
       
-      <div className="sticky top-0 z-10 p-2 bg-gray-800 border-b border-gray-700">
-        <LanguageSelector
-          value={displayLanguage}
-          onChange={handleLanguageChange}
-          label="Display Language"
-        />
-      </div>
-      
       <ScrollArea 
         className="h-full px-4 py-2" 
         onScrollCapture={handleScroll}
@@ -143,9 +126,9 @@ export const MessageList = ({
               .map((message, index) => {
                 const displayText = message.isOutgoing 
                   ? message.text 
-                  : getMessageLanguageContent(message, displayLanguage);
+                  : message.text;
                 const originalText = message.isOutgoing 
-                  ? message.translations?.[displayLanguage] 
+                  ? message.translations?.[outgoingLanguage] 
                   : message.text;
 
                 return (
