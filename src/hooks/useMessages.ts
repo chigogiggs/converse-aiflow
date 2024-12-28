@@ -16,11 +16,14 @@ export const useMessages = (recipientId: string) => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user || !recipientId) return;
 
-        const { data: recipientProfile } = await supabase
+        // Get user's preferred language
+        const { data: userProfile } = await supabase
           .from('profiles')
           .select('preferred_language')
-          .eq('id', recipientId)
+          .eq('id', user.id)
           .single();
+
+        const preferredLanguage = userProfile?.preferred_language || 'en';
 
         const { data, error } = await supabase
           .from('messages')
@@ -32,9 +35,14 @@ export const useMessages = (recipientId: string) => {
 
         if (error) throw error;
 
-        const formattedMessages = (data as DatabaseMessage[]).map(msg => 
-          formatDatabaseMessage(msg, user.id, recipientProfile?.preferred_language)
-        );
+        const formattedMessages = (data as DatabaseMessage[]).map(msg => {
+          const formattedMsg = formatDatabaseMessage(msg, user.id);
+          // If the message is from another user, use the translated content
+          if (msg.sender_id !== user.id && msg.translations) {
+            formattedMsg.text = msg.translations[preferredLanguage] || msg.content;
+          }
+          return formattedMsg;
+        });
 
         setMessages(formattedMessages);
       } catch (error: any) {
@@ -70,16 +78,20 @@ export const useMessages = (recipientId: string) => {
 
             if (payload.eventType === 'INSERT') {
               const newMessage = payload.new as DatabaseMessage;
-              const { data: recipientProfile } = await supabase
+              const { data: userProfile } = await supabase
                 .from('profiles')
                 .select('preferred_language')
-                .eq('id', recipientId)
+                .eq('id', user.id)
                 .single();
 
+              const preferredLanguage = userProfile?.preferred_language || 'en';
+
               if (newMessage.sender_id !== user.id) {
-                setMessages(prev => [...prev, 
-                  formatDatabaseMessage(newMessage, user.id, recipientProfile?.preferred_language)
-                ]);
+                const formattedMsg = formatDatabaseMessage(newMessage, user.id);
+                if (newMessage.translations) {
+                  formattedMsg.text = newMessage.translations[preferredLanguage] || newMessage.content;
+                }
+                setMessages(prev => [...prev, formattedMsg]);
               }
             }
           }
@@ -173,9 +185,9 @@ export const useMessages = (recipientId: string) => {
 
       const updatedMessages = (data as DatabaseMessage[]).map(msg => {
         const formattedMsg = formatDatabaseMessage(msg, user.id);
-        // Check if the message is from another user (not outgoing)
-        if (msg.sender_id !== user.id) {
-          formattedMsg.text = getMessageLanguageContent(formattedMsg, language);
+        // Only translate messages from other users
+        if (msg.sender_id !== user.id && msg.translations) {
+          formattedMsg.text = msg.translations[language] || msg.content;
         }
         return formattedMsg;
       });
