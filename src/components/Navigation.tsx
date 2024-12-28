@@ -1,5 +1,5 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { MessageCircle, Users, Phone, Video, ArrowLeft } from "lucide-react";
+import { Users, Phone, Video, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -42,14 +42,6 @@ export const Navigation = () => {
           
           {recipientProfile ? (
             <>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => navigate('/home')}
-                className="mr-2"
-              >
-                <MessageCircle className="h-5 w-5" />
-              </Button>
               <UserAvatar
                 src={recipientProfile?.avatar_url}
                 fallback={recipientProfile?.display_name?.[0] || "?"}
@@ -69,25 +61,14 @@ export const Navigation = () => {
               </div>
             </>
           ) : (
-            <>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate("/chat")}
-                className="hidden sm:flex"
-              >
-                <MessageCircle className="h-5 w-5" />
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate("/connections")}
-                className="hidden sm:flex"
-              >
-                <Users className="h-5 w-5" />
-              </Button>
-            </>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/connections")}
+              className="hidden sm:flex"
+            >
+              <Users className="h-5 w-5" />
+            </Button>
           )}
         </div>
       </div>
