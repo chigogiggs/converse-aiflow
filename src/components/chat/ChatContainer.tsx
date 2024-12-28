@@ -36,8 +36,6 @@ export const ChatContainer = () => {
   const { messages, sendMessage } = useMessages(recipientId);
   const [isTyping, setIsTyping] = useState(false);
   const [pinnedMessages, setPinnedMessages] = useState<string[]>([]);
-  const [outgoingLanguage, setOutgoingLanguage] = useState("en");
-  const [incomingLanguage, setIncomingLanguage] = useState("en");
   const [searchQuery, setSearchQuery] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -47,7 +45,7 @@ export const ChatContainer = () => {
   };
 
   const handleSendMessage = (text: string) => {
-    sendMessage(text, outgoingLanguage, incomingLanguage);
+    sendMessage(text);
   };
 
   const handleTranslateAll = () => {
@@ -64,7 +62,6 @@ export const ChatContainer = () => {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           isTyping={isTyping}
-          outgoingLanguage={outgoingLanguage}
           onTranslateAll={handleTranslateAll}
           recipientId={recipientId}
         />

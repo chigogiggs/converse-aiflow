@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { translateMessage } from "./useMessageTranslation";
-import { saveMessage, updateUserPreferences } from "./useMessageStore";
+import { saveMessage } from "./useMessageStore";
 import { RealtimeChannel } from "@supabase/supabase-js";
 
 export interface Message {
@@ -103,7 +103,7 @@ export const useMessages = (recipientId: string) => {
     };
   }, [recipientId, toast]);
 
-  const sendMessage = async (text: string, outgoingLanguage: string) => {
+  const sendMessage = async (text: string) => {
     if (!text.trim()) return;
 
     const newMessage: Message = {
@@ -138,7 +138,7 @@ export const useMessages = (recipientId: string) => {
       const savedMessage = await saveMessage(
         text,
         translatedText,
-        outgoingLanguage,
+        'en', // Source language is always English for now
         targetLanguage,
         user.id,
         recipientId
