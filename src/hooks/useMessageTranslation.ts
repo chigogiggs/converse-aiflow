@@ -22,7 +22,9 @@ export const translateMessage = async (
           user_id: recipientId,
           preferred_language: 'en' // Default to English
         }
-      ]);
+      ])
+      .select()
+      .maybeSingle();
 
     if (createError) throw createError;
   }
