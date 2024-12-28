@@ -1,6 +1,8 @@
 import { UserAvatar } from "./UserAvatar";
 import { Button } from "./ui/button";
 import { Check, X } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ConnectionItemProps {
   connection: {
@@ -24,6 +26,29 @@ export const ConnectionItem = ({
   onReject,
   isPending = false,
 }: ConnectionItemProps) => {
+  // Query to get unread messages count
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ['unreadMessages', connection.id],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return 0;
+
+      const { count, error } = await supabase
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('sender_id', connection.id)
+        .eq('recipient_id', user.id)
+        .eq('read', false);
+
+      if (error) {
+        console.error('Error fetching unread count:', error);
+        return 0;
+      }
+
+      return count || 0;
+    }
+  });
+
   return (
     <div 
       className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
@@ -40,6 +65,11 @@ export const ConnectionItem = ({
             <p className="text-sm text-gray-500">@{connection.username}</p>
           )}
         </div>
+        {unreadCount > 0 && (
+          <span className="ml-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full">
+            {unreadCount}
+          </span>
+        )}
       </div>
       
       {showActions && (
