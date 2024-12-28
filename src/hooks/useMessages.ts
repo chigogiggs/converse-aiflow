@@ -173,7 +173,8 @@ export const useMessages = (recipientId: string) => {
 
       const updatedMessages = (data as DatabaseMessage[]).map(msg => {
         const formattedMsg = formatDatabaseMessage(msg, user.id);
-        if (!msg.isOutgoing) {
+        // Check if the message is from another user (not outgoing)
+        if (msg.sender_id !== user.id) {
           formattedMsg.text = getMessageLanguageContent(formattedMsg, language);
         }
         return formattedMsg;
