@@ -1,9 +1,26 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
+const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+// Map of language codes to full names
+const languageMap: { [key: string]: string } = {
+  'en': 'English',
+  'es': 'Spanish',
+  'fr': 'French',
+  'de': 'German',
+  'it': 'Italian',
+  'pt': 'Portuguese',
+  'ru': 'Russian',
+  'zh': 'Chinese (Simplified)',
+  'ja': 'Japanese',
+  'ko': 'Korean',
+  'tr': 'Turkish',
 };
 
 serve(async (req) => {
@@ -14,12 +31,9 @@ serve(async (req) => {
   try {
     const { text, targetLanguage } = await req.json();
     
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
-    }
-
-    console.log(`Translating text to ${targetLanguage}`);
+    // Convert language code to full name
+    const fullLanguageName = languageMap[targetLanguage] || targetLanguage;
+    console.log(`Translating text to ${fullLanguageName}`);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -32,7 +46,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a professional translator. Translate the following text to ${targetLanguage} and reply only with the translated text without quotes or any additional commentary.`
+            content: `You are a professional translator. Translate the following text to ${fullLanguageName}. Reply ONLY with the translated text, without quotes or any additional commentary.`
           },
           {
             role: 'user',
