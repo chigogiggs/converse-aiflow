@@ -55,9 +55,12 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          deleted_at: string | null
           id: string
+          is_deleted: boolean | null
           read: boolean | null
           recipient_id: string
+          reply_to_id: string | null
           sender_id: string
           source_language: string
           target_language: string
@@ -68,9 +71,12 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
+          deleted_at?: string | null
           id?: string
+          is_deleted?: boolean | null
           read?: boolean | null
           recipient_id: string
+          reply_to_id?: string | null
           sender_id: string
           source_language?: string
           target_language?: string
@@ -81,9 +87,12 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
+          deleted_at?: string | null
           id?: string
+          is_deleted?: boolean | null
           read?: boolean | null
           recipient_id?: string
+          reply_to_id?: string | null
           sender_id?: string
           source_language?: string
           target_language?: string
@@ -97,6 +106,13 @@ export type Database = {
             columns: ["recipient_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
             referencedColumns: ["id"]
           },
           {

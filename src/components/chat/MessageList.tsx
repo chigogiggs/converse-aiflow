@@ -16,6 +16,8 @@ interface MessageListProps {
   outgoingLanguage?: string;
   onTranslateAll?: () => void;
   recipientId: string;
+  onReply: (message: Message) => void;
+  replyingTo: Message | null;
 }
 
 export const MessageList = ({
@@ -25,11 +27,14 @@ export const MessageList = ({
   isTyping,
   outgoingLanguage = 'en',
   onTranslateAll,
-  recipientId
+  recipientId,
+  onReply,
+  replyingTo
 }: MessageListProps) => {
   const [showSearch, setShowSearch] = useState(false);
   const { updateMessagesLanguage } = useMessages(recipientId);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [repliedMessages, setRepliedMessages] = useState<Record<string, any>>({});
 
   useEffect(() => {
     const loadPreferredLanguage = async () => {
@@ -49,6 +54,41 @@ export const MessageList = ({
 
     loadPreferredLanguage();
   }, []);
+
+  useEffect(() => {
+    const fetchRepliedMessages = async () => {
+      const repliedIds = messages
+        .filter(msg => msg.replyToId)
+        .map(msg => msg.replyToId);
+
+      if (repliedIds.length === 0) return;
+
+      const { data } = await supabase
+        .from('messages')
+        .select(`
+          id,
+          content,
+          sender_id,
+          profiles (
+            display_name
+          )
+        `)
+        .in('id', repliedIds);
+
+      if (data) {
+        const repliesMap = data.reduce((acc: Record<string, any>, msg) => {
+          acc[msg.id] = {
+            text: msg.content,
+            senderName: msg.profiles?.display_name
+          };
+          return acc;
+        }, {});
+        setRepliedMessages(repliesMap);
+      }
+    };
+
+    fetchRepliedMessages();
+  }, [messages]);
 
   useEffect(() => {
     const markMessagesAsRead = async () => {
@@ -81,6 +121,18 @@ export const MessageList = ({
     } else {
       setShowSearch(false);
     }
+  };
+
+  const handleDelete = async (messageId: string) => {
+    // Message deletion is handled in the MessageContextMenu component
+  };
+
+  const handlePin = async (messageId: string) => {
+    // Implement pin functionality
+  };
+
+  const handleStar = async (messageId: string) => {
+    // Implement star functionality
   };
 
   return (
@@ -120,8 +172,9 @@ export const MessageList = ({
           <AnimatePresence mode="popLayout">
             {messages
               .filter(message =>
-                message.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                (message.originalText?.toLowerCase().includes(searchQuery.toLowerCase()))
+                !message.is_deleted &&
+                (message.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (message.originalText?.toLowerCase().includes(searchQuery.toLowerCase())))
               )
               .map((message, index) => {
                 const displayText = message.isOutgoing 
@@ -156,12 +209,18 @@ export const MessageList = ({
                     className="group relative"
                   >
                     <ChatMessage
+                      messageId={message.id}
                       message={displayText}
                       isOutgoing={message.isOutgoing}
                       timestamp={message.timestamp}
                       isTranslating={message.isTranslating}
                       originalText={originalText}
                       senderId={message.isOutgoing ? undefined : message.senderId}
+                      replyToMessage={message.replyToId ? repliedMessages[message.replyToId] : undefined}
+                      onReply={() => onReply(message)}
+                      onDelete={handleDelete}
+                      onPin={handlePin}
+                      onStar={handleStar}
                     />
                   </motion.div>
                 );

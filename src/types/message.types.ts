@@ -6,9 +6,12 @@ export interface Message {
   isTranslating?: boolean;
   originalText?: string;
   isPinned?: boolean;
+  isStarred?: boolean;
   isEdited?: boolean;
   senderId?: string;
   translations?: Record<string, string>;
+  replyToId?: string;
+  is_deleted?: boolean;
 }
 
 export interface DatabaseMessage {
@@ -23,4 +26,7 @@ export interface DatabaseMessage {
   updated_at: string;
   read: boolean | null;
   translations: Record<string, string> | null;
+  reply_to_id: string | null;
+  is_deleted: boolean | null;
+  deleted_at: string | null;
 }

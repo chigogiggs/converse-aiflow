@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useIsMobile } from "@/hooks/use-mobile";
 import { UserAvatar } from "./UserAvatar";
 import { supabase } from "@/integrations/supabase/client";
+import { MessageContextMenu } from "./chat/MessageContextMenu";
 
 interface ChatMessageProps {
   message: string;
@@ -14,6 +15,15 @@ interface ChatMessageProps {
   isTranslating?: boolean;
   originalText?: string;
   senderId?: string;
+  replyToMessage?: {
+    text: string;
+    senderName: string;
+  };
+  onReply?: (message: any) => void;
+  onDelete?: (messageId: string) => void;
+  onPin?: (messageId: string) => void;
+  onStar?: (messageId: string) => void;
+  messageId: string;
 }
 
 export const ChatMessage = ({ 
@@ -22,7 +32,13 @@ export const ChatMessage = ({
   timestamp, 
   isTranslating,
   originalText,
-  senderId
+  senderId,
+  replyToMessage,
+  onReply,
+  onDelete,
+  onPin,
+  onStar,
+  messageId
 }: ChatMessageProps) => {
   const [showOriginal, setShowOriginal] = useState(false);
   const isMobile = useIsMobile();
@@ -31,7 +47,6 @@ export const ChatMessage = ({
 
   useEffect(() => {
     const fetchProfiles = async () => {
-      // Fetch sender's profile if it's an incoming message
       if (senderId && !isOutgoing) {
         const { data: profile } = await supabase
           .from('profiles')
@@ -44,7 +59,6 @@ export const ChatMessage = ({
         }
       }
 
-      // Fetch current user's profile for outgoing messages
       if (isOutgoing) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
@@ -71,90 +85,107 @@ export const ChatMessage = ({
   };
 
   return (
-    <div
-      className={cn(
-        "flex w-full mt-2 space-x-3 max-w-md group",
-        isOutgoing ? "ml-auto flex-row-reverse" : ""
-      )}
+    <MessageContextMenu
+      message={{ id: messageId, senderId, text: message }}
+      onReply={onReply || (() => {})}
+      onDelete={onDelete || (() => {})}
+      onPin={onPin || (() => {})}
+      onStar={onStar || (() => {})}
     >
-      <div className="flex-shrink-0">
-        <UserAvatar
-          src={isOutgoing ? currentUserProfile?.avatar_url : senderProfile?.avatar_url}
-          fallback={(isOutgoing ? currentUserProfile?.display_name : senderProfile?.display_name)?.[0] || "?"}
-          size="sm"
-        />
+      <div
+        className={cn(
+          "flex w-full mt-2 space-x-3 max-w-md group",
+          isOutgoing ? "ml-auto flex-row-reverse" : ""
+        )}
+      >
+        <div className="flex-shrink-0">
+          <UserAvatar
+            src={isOutgoing ? currentUserProfile?.avatar_url : senderProfile?.avatar_url}
+            fallback={(isOutgoing ? currentUserProfile?.display_name : senderProfile?.display_name)?.[0] || "?"}
+            size="sm"
+          />
+        </div>
+        <div className={cn("flex flex-col", isOutgoing ? "items-end" : "items-start")}>
+          {replyToMessage && (
+            <div className={cn(
+              "text-xs text-white/50 mb-1 px-3 py-1 rounded-lg",
+              isOutgoing ? "bg-primary/10" : "bg-secondary/10"
+            )}>
+              <span className="font-medium">{replyToMessage.senderName}</span>
+              <p className="truncate">{replyToMessage.text}</p>
+            </div>
+          )}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <motion.div
+                  className={cn(
+                    "relative p-3 rounded-lg cursor-pointer group neo-blur",
+                    isOutgoing
+                      ? "bg-primary/20 text-white rounded-br-none"
+                      : "bg-secondary/20 text-white rounded-bl-none"
+                  )}
+                  onClick={toggleOriginal}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  layout
+                >
+                  <AnimatePresence mode="wait">
+                    <motion.p
+                      key={showOriginal ? 'original' : 'translated'}
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      transition={{ duration: 0.2 }}
+                      className="text-sm"
+                    >
+                      {showOriginal ? originalText : message}
+                    </motion.p>
+                  </AnimatePresence>
+                  {originalText && (
+                    <Languages 
+                      className={cn(
+                        "h-4 w-4 absolute top-1/2 -translate-y-1/2 transition-all duration-300",
+                        isMobile ? "opacity-50" : "opacity-0 group-hover:opacity-50",
+                        isOutgoing ? "-left-5 text-primary/60" : "-right-5 text-secondary/60"
+                      )}
+                    />
+                  )}
+                  {originalText && isMobile && (
+                    <div className={cn(
+                      "absolute top-1/2 -translate-y-1/2 w-1 h-8 rounded-full",
+                      isOutgoing ? "-left-2 bg-primary/30" : "-right-2 bg-secondary/30"
+                    )} />
+                  )}
+                  {isTranslating && (
+                    <motion.span 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-xs opacity-70"
+                    >
+                      Translating...
+                    </motion.span>
+                  )}
+                </motion.div>
+              </TooltipTrigger>
+              <TooltipContent className="bg-popover text-popover-foreground border-border/50">
+                <p>
+                  {showOriginal 
+                    ? `${isMobile ? "Tap" : "Click"} to see translated message`
+                    : `${isMobile ? "Tap" : "Click"} to see original message`
+                  }
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <span className={cn(
+            "text-xs text-white/70 leading-none mt-1 block",
+            isOutgoing ? "text-right" : "text-left"
+          )}>
+            {timestamp}
+          </span>
+        </div>
       </div>
-      <div className={cn("flex flex-col", isOutgoing ? "items-end" : "items-start")}>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <motion.div
-                className={cn(
-                  "relative p-3 rounded-lg cursor-pointer group neo-blur",
-                  isOutgoing
-                    ? "bg-primary/20 text-white rounded-br-none"
-                    : "bg-secondary/20 text-white rounded-bl-none"
-                )}
-                onClick={toggleOriginal}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                layout
-              >
-                <AnimatePresence mode="wait">
-                  <motion.p
-                    key={showOriginal ? 'original' : 'translated'}
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -5 }}
-                    transition={{ duration: 0.2 }}
-                    className="text-sm"
-                  >
-                    {showOriginal ? originalText : message}
-                  </motion.p>
-                </AnimatePresence>
-                {originalText && (
-                  <Languages 
-                    className={cn(
-                      "h-4 w-4 absolute top-1/2 -translate-y-1/2 transition-all duration-300",
-                      isMobile ? "opacity-50" : "opacity-0 group-hover:opacity-50",
-                      isOutgoing ? "-left-5 text-primary/60" : "-right-5 text-secondary/60"
-                    )}
-                  />
-                )}
-                {originalText && isMobile && (
-                  <div className={cn(
-                    "absolute top-1/2 -translate-y-1/2 w-1 h-8 rounded-full",
-                    isOutgoing ? "-left-2 bg-primary/30" : "-right-2 bg-secondary/30"
-                  )} />
-                )}
-                {isTranslating && (
-                  <motion.span 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-xs opacity-70"
-                  >
-                    Translating...
-                  </motion.span>
-                )}
-              </motion.div>
-            </TooltipTrigger>
-            <TooltipContent className="bg-popover text-popover-foreground border-border/50">
-              <p>
-                {showOriginal 
-                  ? `${isMobile ? "Tap" : "Click"} to see translated message`
-                  : `${isMobile ? "Tap" : "Click"} to see original message`
-                }
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-        <span className={cn(
-          "text-xs text-white/70 leading-none mt-1 block",
-          isOutgoing ? "text-right" : "text-left"
-        )}>
-          {timestamp}
-        </span>
-      </div>
-    </div>
+    </MessageContextMenu>
   );
 };
