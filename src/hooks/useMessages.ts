@@ -27,7 +27,8 @@ export const useMessages = (recipientId: string) => {
           .select('*')
           .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
           .or(`sender_id.eq.${recipientId},recipient_id.eq.${recipientId}`)
-          .order('created_at', { ascending: true });
+          .order('created_at', { ascending: true })
+          .limit(100);
 
         if (error) throw error;
 

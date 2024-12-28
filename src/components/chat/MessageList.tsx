@@ -31,6 +31,7 @@ export const MessageList = ({
 }: MessageListProps) => {
   const [showSearch, setShowSearch] = useState(false);
   const [displayLanguage, setDisplayLanguage] = useState("en");
+  const { updateMessagesLanguage } = useMessages(recipientId);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -77,6 +78,11 @@ export const MessageList = ({
     }
   }, [messages]);
 
+  const handleLanguageChange = async (newLanguage: string) => {
+    setDisplayLanguage(newLanguage);
+    await updateMessagesLanguage(newLanguage);
+  };
+
   const handleScroll = (e: any) => {
     if (e.target.scrollTop > 100) {
       setShowSearch(true);
@@ -105,7 +111,7 @@ export const MessageList = ({
               />
               <LanguageSelector
                 value={displayLanguage}
-                onChange={setDisplayLanguage}
+                onChange={handleLanguageChange}
                 label=""
               />
             </div>
