@@ -13,7 +13,7 @@ interface MessageListProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   isTyping: boolean;
-  outgoingLanguage: string;
+  outgoingLanguage?: string; // Made optional
   onTranslateAll?: () => void;
   recipientId: string;
 }
@@ -23,7 +23,7 @@ export const MessageList = ({
   searchQuery,
   setSearchQuery,
   isTyping,
-  outgoingLanguage,
+  outgoingLanguage = 'en', // Default value if not provided
   onTranslateAll,
   recipientId
 }: MessageListProps) => {
