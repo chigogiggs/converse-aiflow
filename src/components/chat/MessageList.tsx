@@ -13,7 +13,7 @@ interface MessageListProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   isTyping: boolean;
-  outgoingLanguage?: string; // Made optional
+  outgoingLanguage?: string;
   onTranslateAll?: () => void;
   recipientId: string;
 }
@@ -23,7 +23,7 @@ export const MessageList = ({
   searchQuery,
   setSearchQuery,
   isTyping,
-  outgoingLanguage = 'en', // Default value if not provided
+  outgoingLanguage = 'en',
   onTranslateAll,
   recipientId
 }: MessageListProps) => {
@@ -47,6 +47,16 @@ export const MessageList = ({
     markMessagesAsRead();
   }, [recipientId, messages]);
 
+  // Auto scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  }, [messages]);
+
   const handleScroll = (e: any) => {
     if (e.target.scrollTop > 100) {
       setShowSearch(true);
@@ -56,7 +66,7 @@ export const MessageList = ({
   };
 
   return (
-    <div className="relative flex-1 mt-20 bg-gray-900">
+    <div className="relative flex-1 h-[calc(100vh-16rem)] bg-gray-900">
       <AnimatePresence>
         {showSearch && (
           <motion.div
@@ -84,12 +94,12 @@ export const MessageList = ({
       </AnimatePresence>
       
       <ScrollArea 
-        className="h-full p-4 bg-gray-900" 
+        className="h-full px-4 py-2" 
         onScrollCapture={handleScroll}
         ref={scrollRef}
       >
         <motion.div 
-          className="space-y-4"
+          className="space-y-4 pb-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
@@ -101,7 +111,6 @@ export const MessageList = ({
                 (message.originalText?.toLowerCase().includes(searchQuery.toLowerCase()))
               )
               .map((message, index) => {
-                // For incoming messages, show translated version by default
                 const displayText = message.isOutgoing ? message.originalText || message.text : message.text;
                 const originalText = message.isOutgoing ? message.text : message.originalText;
 
