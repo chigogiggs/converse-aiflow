@@ -5,18 +5,29 @@ export const translateMessage = async (
   recipientId: string
 ): Promise<{ translatedText: string; targetLanguage: string }> => {
   try {
-    // First try to get existing preferences
-    let preferences = await supabase
+    // First check if the user is authenticated
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !session) {
+      console.error('Session error:', sessionError);
+      return {
+        translatedText: text,
+        targetLanguage: 'en'
+      };
+    }
+
+    // Try to get existing preferences using single() since we expect one row
+    let { data: preferences, error: prefsError } = await supabase
       .from('user_preferences')
       .select('preferred_language')
       .eq('user_id', recipientId)
-      .maybeSingle()
-      .then(({ data, error }) => {
-        if (error) throw error;
-        return data;
-      });
+      .maybeSingle();
 
-    // If no preferences exist, create them with default values
+    if (prefsError) {
+      console.error('Error fetching preferences:', prefsError);
+      preferences = { preferred_language: 'en' };
+    }
+
+    // If no preferences exist, create default ones
     if (!preferences) {
       const { data: newPrefs, error: createError } = await supabase
         .from('user_preferences')
@@ -27,18 +38,18 @@ export const translateMessage = async (
           }
         ])
         .select('preferred_language')
-        .maybeSingle();
+        .single();
 
       if (createError) {
         console.error('Error creating preferences:', createError);
-        throw createError;
+        return {
+          translatedText: text,
+          targetLanguage: 'en'
+        };
       }
 
       preferences = newPrefs;
     }
-
-    // Use either existing preference or default to English
-    const targetLanguage = preferences?.preferred_language || 'en';
 
     // Get full language name for better translation
     const languageMap: { [key: string]: string } = {
@@ -55,25 +66,34 @@ export const translateMessage = async (
       'tr': 'Turkish'
     };
 
+    const targetLanguage = preferences?.preferred_language || 'en';
     const fullLanguageName = languageMap[targetLanguage] || 'English';
 
-    // Translate the message using our Edge Function
-    const { data: translatedMessage, error } = await supabase.functions.invoke('translate-message', {
-      body: { 
-        text,
-        targetLanguage: fullLanguageName
-      }
-    });
+    // Translate the message using Edge Function
+    try {
+      const { data: translatedMessage, error } = await supabase.functions.invoke('translate-message', {
+        body: { 
+          text,
+          targetLanguage: fullLanguageName
+        }
+      });
 
-    if (error) throw error;
+      if (error) throw error;
 
-    return {
-      translatedText: translatedMessage.translatedText,
-      targetLanguage
-    };
+      return {
+        translatedText: translatedMessage.translatedText,
+        targetLanguage
+      };
+    } catch (translateError) {
+      console.error('Translation error:', translateError);
+      return {
+        translatedText: text,
+        targetLanguage: 'en'
+      };
+    }
   } catch (error) {
-    console.error('Translation error:', error);
-    // Return original text if translation fails
+    console.error('General error:', error);
+    // Return original text if anything fails
     return {
       translatedText: text,
       targetLanguage: 'en'
