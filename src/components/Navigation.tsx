@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { LogOut, MessageCircle, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Logo } from "@/components/Logo";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -41,8 +40,6 @@ export const Navigation = () => {
   return (
     <nav className="sticky top-0 z-50 w-full py-4 px-6 bg-white border-b">
       <div className="container mx-auto flex justify-between items-center">
-        <Logo className="cursor-pointer" onClick={() => navigate("/")} />
-        
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
