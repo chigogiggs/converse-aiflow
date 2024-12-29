@@ -1,14 +1,14 @@
-import { useEffect, useState } from "react";
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { MessageCircleReply, Trash2, Star, Pin } from "lucide-react";
+import { MessageCircleReply, Trash2, Star, Pin, Copy } from "lucide-react";
 import { Message } from "@/types/message.types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 interface MessageContextMenuProps {
   children: React.ReactNode;
@@ -28,38 +28,19 @@ export const MessageContextMenu = ({
   onStar,
 }: MessageContextMenuProps) => {
   const { toast } = useToast();
-  const [isOwner, setIsOwner] = useState(false);
 
-  useEffect(() => {
-    const checkOwnership = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setIsOwner(user?.id === message.senderId);
-    };
-    checkOwnership();
-  }, [message.senderId]);
-
-  const handleDelete = async () => {
+  const handleCopy = async () => {
     try {
-      const { error } = await supabase
-        .from('messages')
-        .update({
-          is_deleted: true,
-          deleted_at: new Date().toISOString()
-        })
-        .eq('id', message.id);
-
-      if (error) throw error;
-      onDelete(message.id);
-      
+      await navigator.clipboard.writeText(message.text);
       toast({
-        title: "Message deleted",
-        description: "The message has been deleted successfully.",
+        title: "Copied to clipboard",
+        description: "Message text has been copied",
       });
     } catch (error) {
-      console.error('Error deleting message:', error);
+      console.error('Error copying text:', error);
       toast({
         title: "Error",
-        description: "Failed to delete the message.",
+        description: "Failed to copy text",
         variant: "destructive",
       });
     }
@@ -78,15 +59,13 @@ export const MessageContextMenu = ({
           <MessageCircleReply className="h-4 w-4" />
           Reply
         </ContextMenuItem>
-        {isOwner && (
-          <ContextMenuItem
-            className="flex items-center gap-2 text-[#C8C8C9] hover:bg-[#403E43] cursor-pointer"
-            onClick={handleDelete}
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete
-          </ContextMenuItem>
-        )}
+        <ContextMenuItem
+          className="flex items-center gap-2 text-[#C8C8C9] hover:bg-[#403E43] cursor-pointer"
+          onClick={handleCopy}
+        >
+          <Copy className="h-4 w-4" />
+          Copy
+        </ContextMenuItem>
         <ContextMenuItem
           className="flex items-center gap-2 text-[#C8C8C9] hover:bg-[#403E43] cursor-pointer"
           onClick={() => onPin(message.id)}

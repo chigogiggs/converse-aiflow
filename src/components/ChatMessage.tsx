@@ -6,6 +6,7 @@ import { MessageAvatar } from "./chat/message/MessageAvatar";
 import { SingleMessageContent } from "./chat/message/SingleMessageContent";
 import { ReplyPreview } from "./chat/message/ReplyPreview";
 import { Message } from "@/types/message.types";
+import { Play, Pause } from "lucide-react";
 
 interface ChatMessageProps {
   message: string;
@@ -23,6 +24,8 @@ interface ChatMessageProps {
   onPin?: (messageId: string) => void;
   onStar?: (messageId: string) => void;
   messageId: string;
+  type?: 'text' | 'image' | 'voice';
+  mediaUrl?: string;
 }
 
 export const ChatMessage = ({ 
@@ -37,11 +40,15 @@ export const ChatMessage = ({
   onDelete,
   onPin,
   onStar,
-  messageId
+  messageId,
+  type = 'text',
+  mediaUrl
 }: ChatMessageProps) => {
   const [showOriginal, setShowOriginal] = useState(false);
   const [senderProfile, setSenderProfile] = useState<any>(null);
   const [currentUserProfile, setCurrentUserProfile] = useState<any>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -76,9 +83,66 @@ export const ChatMessage = ({
     fetchProfiles();
   }, [senderId, isOutgoing]);
 
+  useEffect(() => {
+    if (type === 'voice' && mediaUrl) {
+      const audioElement = new Audio(mediaUrl);
+      audioElement.onended = () => setIsPlaying(false);
+      setAudio(audioElement);
+    }
+  }, [mediaUrl, type]);
+
   const toggleOriginal = () => {
     if (originalText) {
       setShowOriginal(!showOriginal);
+    }
+  };
+
+  const toggleAudio = () => {
+    if (!audio) return;
+
+    if (isPlaying) {
+      audio.pause();
+      setIsPlaying(false);
+    } else {
+      audio.play();
+      setIsPlaying(true);
+    }
+  };
+
+  const renderContent = () => {
+    switch (type) {
+      case 'image':
+        return (
+          <img 
+            src={mediaUrl} 
+            alt={message}
+            className="max-w-xs rounded-lg shadow-md hover:opacity-90 transition-opacity cursor-pointer"
+            onClick={() => window.open(mediaUrl, '_blank')}
+          />
+        );
+      case 'voice':
+        return (
+          <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-2">
+            <button
+              onClick={toggleAudio}
+              className="p-2 rounded-full bg-indigo-600 text-white hover:bg-indigo-500 transition-colors"
+            >
+              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            </button>
+            <span className="text-sm text-gray-600">Voice message</span>
+          </div>
+        );
+      default:
+        return (
+          <SingleMessageContent
+            message={message}
+            originalText={originalText}
+            isOutgoing={isOutgoing}
+            isTranslating={isTranslating}
+            onToggleOriginal={toggleOriginal}
+            showOriginal={showOriginal}
+          />
+        );
     }
   };
 
@@ -115,14 +179,7 @@ export const ChatMessage = ({
               isOutgoing={isOutgoing}
             />
           )}
-          <SingleMessageContent
-            message={message}
-            originalText={originalText}
-            isOutgoing={isOutgoing}
-            isTranslating={isTranslating}
-            onToggleOriginal={toggleOriginal}
-            showOriginal={showOriginal}
-          />
+          {renderContent()}
           <span className={cn(
             "text-xs text-white/70 leading-none mt-1 block",
             isOutgoing ? "text-right" : "text-left"
