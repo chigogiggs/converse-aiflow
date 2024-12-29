@@ -24,7 +24,7 @@ export const MediaHandlers = ({ onSendMessage }: MediaHandlersProps) => {
 
     try {
       const base64Content = await fileToBase64(file);
-      onSendMessage(file.name, 'image', base64Content);
+      onSendMessage("Image message", 'image', base64Content);
     } catch (error) {
       console.error('Error processing image:', error);
       toast({

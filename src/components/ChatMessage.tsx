@@ -115,7 +115,7 @@ export const ChatMessage = ({
         return (
           <img 
             src={mediaContent} 
-            alt={message}
+            alt="Sent image"
             className="max-w-xs rounded-lg shadow-md hover:opacity-90 transition-opacity cursor-pointer"
             onClick={() => window.open(mediaContent, '_blank')}
           />
