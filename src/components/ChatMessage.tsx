@@ -25,7 +25,7 @@ interface ChatMessageProps {
   onStar?: (messageId: string) => void;
   messageId: string;
   type?: 'text' | 'image' | 'voice';
-  mediaUrl?: string;
+  mediaContent?: string;
 }
 
 export const ChatMessage = ({ 
@@ -42,7 +42,7 @@ export const ChatMessage = ({
   onStar,
   messageId,
   type = 'text',
-  mediaUrl
+  mediaContent
 }: ChatMessageProps) => {
   const [showOriginal, setShowOriginal] = useState(false);
   const [senderProfile, setSenderProfile] = useState<any>(null);
@@ -84,12 +84,12 @@ export const ChatMessage = ({
   }, [senderId, isOutgoing]);
 
   useEffect(() => {
-    if (type === 'voice' && mediaUrl) {
-      const audioElement = new Audio(mediaUrl);
+    if (type === 'voice' && mediaContent) {
+      const audioElement = new Audio(mediaContent);
       audioElement.onended = () => setIsPlaying(false);
       setAudio(audioElement);
     }
-  }, [mediaUrl, type]);
+  }, [mediaContent, type]);
 
   const toggleOriginal = () => {
     if (originalText) {
@@ -114,10 +114,10 @@ export const ChatMessage = ({
       case 'image':
         return (
           <img 
-            src={mediaUrl} 
+            src={mediaContent} 
             alt={message}
             className="max-w-xs rounded-lg shadow-md hover:opacity-90 transition-opacity cursor-pointer"
-            onClick={() => window.open(mediaUrl, '_blank')}
+            onClick={() => window.open(mediaContent, '_blank')}
           />
         );
       case 'voice':

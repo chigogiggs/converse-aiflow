@@ -1,18 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { useState, useEffect, useRef } from "react";
-import { Send, Image, Mic } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Send } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ChatInputActions } from "./chat/input/ChatInputActions";
 import { EmojiPicker } from "./chat/input/EmojiPicker";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { MediaHandlers } from "./chat/input/MediaHandlers";
 
 interface ChatInputProps {
-  onSendMessage: (message: string, type?: 'text' | 'image' | 'voice', mediaUrl?: string) => void;
+  onSendMessage: (message: string, type?: 'text' | 'image' | 'voice', mediaContent?: string) => void;
   onTyping?: () => void;
-  onVoiceMessage?: () => void;
-  onImageUpload?: (file: File) => void;
   replyingTo?: {
     id: string;
     text: string;
@@ -24,17 +21,11 @@ interface ChatInputProps {
 export const ChatInput = ({ 
   onSendMessage, 
   onTyping,
-  onVoiceMessage,
-  onImageUpload,
   replyingTo,
   onCancelReply
 }: ChatInputProps) => {
   const [message, setMessage] = useState("");
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
-  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -79,93 +70,6 @@ export const ChatInput = ({
     }
   };
 
-  const handleImageClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${user.id}/${crypto.randomUUID()}.${fileExt}`;
-
-      const { data, error } = await supabase.storage
-        .from('chat-media')
-        .upload(filePath, file);
-
-      if (error) throw error;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('chat-media')
-        .getPublicUrl(filePath);
-
-      onSendMessage(file.name, 'image', publicUrl);
-    } catch (error: any) {
-      console.error('Error uploading image:', error);
-      toast({
-        title: "Error",
-        description: "Failed to upload image",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
-      
-      recorder.ondataavailable = (e) => {
-        setAudioChunks(chunks => [...chunks, e.data]);
-      };
-
-      recorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const filePath = `${user.id}/${crypto.randomUUID()}.webm`;
-        
-        const { data, error } = await supabase.storage
-          .from('chat-media')
-          .upload(filePath, audioBlob);
-
-        if (error) throw error;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('chat-media')
-          .getPublicUrl(filePath);
-
-        onSendMessage('Voice message', 'voice', publicUrl);
-        setAudioChunks([]);
-      };
-
-      setMediaRecorder(recorder);
-      recorder.start();
-      setIsRecording(true);
-    } catch (error) {
-      console.error('Error starting recording:', error);
-      toast({
-        title: "Error",
-        description: "Failed to start recording",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorder && isRecording) {
-      mediaRecorder.stop();
-      setIsRecording(false);
-      mediaRecorder.stream.getTracks().forEach(track => track.stop());
-    }
-  };
-
   const handleEmojiSelect = (emoji: any) => {
     setMessage(prev => prev + emoji.native);
   };
@@ -198,36 +102,7 @@ export const ChatInput = ({
         </div>
       )}
       <div className="flex items-end gap-2">
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          accept="image/*"
-          className="hidden"
-        />
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={handleImageClick}
-            className="rounded-full"
-          >
-            <Image className="h-5 w-5 text-gray-600" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onMouseDown={startRecording}
-            onMouseUp={stopRecording}
-            onTouchStart={startRecording}
-            onTouchEnd={stopRecording}
-            className={`rounded-full ${isRecording ? 'bg-red-100 text-red-600' : ''}`}
-          >
-            <Mic className="h-5 w-5 text-gray-600" />
-          </Button>
-        </div>
+        <MediaHandlers onSendMessage={onSendMessage} />
         <div className="relative flex-1">
           <Textarea
             value={message}

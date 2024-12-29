@@ -58,6 +58,8 @@ export type Database = {
           deleted_at: string | null
           id: string
           is_deleted: boolean | null
+          media_content: string | null
+          media_type: string | null
           read: boolean | null
           recipient_id: string
           reply_to_id: string | null
@@ -74,6 +76,8 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           is_deleted?: boolean | null
+          media_content?: string | null
+          media_type?: string | null
           read?: boolean | null
           recipient_id: string
           reply_to_id?: string | null
@@ -90,6 +94,8 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           is_deleted?: boolean | null
+          media_content?: string | null
+          media_type?: string | null
           read?: boolean | null
           recipient_id?: string
           reply_to_id?: string | null
