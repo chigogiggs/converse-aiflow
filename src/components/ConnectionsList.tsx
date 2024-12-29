@@ -26,8 +26,9 @@ export const ConnectionsList = ({ onSelectConnection }: ConnectionsListProps) =>
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const channel = supabase
-        .channel('connections')
+      // Channel for received connections
+      const receivedChannel = supabase
+        .channel('received-connections')
         .on(
           'postgres_changes',
           {
@@ -54,8 +55,26 @@ export const ConnectionsList = ({ onSelectConnection }: ConnectionsListProps) =>
         )
         .subscribe();
 
+      // Channel for sent connections
+      const sentChannel = supabase
+        .channel('sent-connections')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'connections',
+            filter: `requester_id=eq.${user.id}`
+          },
+          () => {
+            refreshConnections();
+          }
+        )
+        .subscribe();
+
       return () => {
-        supabase.removeChannel(channel);
+        supabase.removeChannel(receivedChannel);
+        supabase.removeChannel(sentChannel);
       };
     };
 
