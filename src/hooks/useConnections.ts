@@ -9,6 +9,18 @@ export const useConnections = () => {
   const [pendingSent, setPendingSent] = useState<Connection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const refreshConnections = async () => {
+    setIsLoading(true);
+    try {
+      await fetchConnections();
+    } catch (error) {
+      console.error('Error refreshing connections:', error);
+      toast.error('Failed to refresh connections');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const fetchConnections = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -247,5 +259,6 @@ export const useConnections = () => {
     handleAccept,
     handleReject,
     isLoading,
+    refreshConnections, // Add the refresh function to the return object
   };
 };

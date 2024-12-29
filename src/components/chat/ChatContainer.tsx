@@ -10,11 +10,49 @@ import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Message } from "@/types/message.types";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 export const ChatContainer = () => {
   const [searchParams] = useSearchParams();
   const recipientId = searchParams.get('recipient');
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const { toast: toastNotification } = useToast();
+  
+  useEffect(() => {
+    if (!recipientId) return;
+
+    const channel = supabase
+      .channel('messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `recipient_id=eq.${recipientId}`
+        },
+        async (payload) => {
+          // Get sender's profile for the notification
+          const { data: senderProfile } = await supabase
+            .from('profiles')
+            .select('display_name')
+            .eq('id', payload.new.sender_id)
+            .single();
+
+          toast(`New message from ${senderProfile?.display_name || 'someone'}`, {
+            description: payload.new.content,
+            duration: 5000,
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [recipientId]);
   
   if (!recipientId) {
     return (
