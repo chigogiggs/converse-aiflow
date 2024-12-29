@@ -22,40 +22,44 @@ export const ConnectionsList = ({ onSelectConnection }: ConnectionsListProps) =>
   } = useConnections();
 
   useEffect(() => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    const setupRealtimeSubscription = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    const channel = supabase
-      .channel('connections')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'connections',
-          filter: `recipient_id=eq.${user.id}`
-        },
-        async (payload) => {
-          if (payload.eventType === 'INSERT') {
-            const { data: requesterProfile } = await supabase
-              .from('profiles')
-              .select('display_name')
-              .eq('id', payload.new.requester_id)
-              .single();
+      const channel = supabase
+        .channel('connections')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'connections',
+            filter: `recipient_id=eq.${user.id}`
+          },
+          async (payload) => {
+            if (payload.eventType === 'INSERT') {
+              const { data: requesterProfile } = await supabase
+                .from('profiles')
+                .select('display_name')
+                .eq('id', payload.new.requester_id)
+                .single();
 
-            toast(`New connection request`, {
-              description: `${requesterProfile?.display_name || 'Someone'} wants to connect with you`,
-              duration: 5000,
-            });
+              toast(`New connection request`, {
+                description: `${requesterProfile?.display_name || 'Someone'} wants to connect with you`,
+                duration: 5000,
+              });
+            }
+            refreshConnections();
           }
-          refreshConnections();
-        }
-      )
-      .subscribe();
+        )
+        .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
+      return () => {
+        supabase.removeChannel(channel);
+      };
     };
+
+    setupRealtimeSubscription();
   }, []);
 
   return (
